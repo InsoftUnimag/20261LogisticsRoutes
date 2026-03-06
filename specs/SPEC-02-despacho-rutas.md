@@ -1,6 +1,6 @@
-# Feature Specification: Despacho de Rutas
+# Feature Specification: Despachar Paquetes a Rutas (MOD2-UC-002)
 
-**Created:** 27/02/2026  
+**Created:** 2026-03-01  
 **By:** Esteban Puello, Jose Rodriguez, Laura Perez, Robert Gonzalez
 
 ---
@@ -8,47 +8,46 @@
 ## User Story 2 – Despachar Paquetes a Rutas (Priority: P1)
 
 **Como** Despachador Logístico,  
-**quiero** confirmar que los paquetes están cargados en el vehículo y despachar los paquetes asignados a la ruta,  
-**para que** los paquetes avancen al estado 'En Tránsito', el conductor reciba la ruta en su dispositivo y el Sistema de Gestión de Paquetes (Módulo 1) sea notificado del cambio de estado.
+**quiero** revisar las rutas en estado 'Lista para Despacho' y confirmar cada una,  
+**para que** el sistema asigne el conductor y vehículo físico, y la ruta quede lista para que el conductor inicie el tránsito.
 
-**Why this priority:** Es el punto de activación de la operación de entrega y el evento que notifica al Sistema de Gestión de Paquetes (Módulo 1) que los paquetes están en camino. Sin el despacho, ninguna ruta planificada se ejecuta.
+**Why this priority:** Es el punto de activación de la operación de entrega. Sin la confirmación del despachador, ninguna ruta planificada puede pasar a manos del conductor.
 
-**Independent Test:** Se puede probar tomando una ruta planificada, ejecutando el despacho y verificando que el conductor recibe la ruta en su dispositivo, los paquetes cambian a 'En Tránsito' y el Sistema de Gestión de Paquetes (Módulo 1) recibe la notificación.
+**Independent Test:** Se puede probar tomando una ruta en estado 'Lista para Despacho', ejecutando la confirmación y verificando que la ruta pasa a 'Ruta Confirmada', el conductor y vehículo físico quedan asignados y el conductor puede ver la ruta en su dispositivo.
 
-**Acceptance Scenarios:**
+---
 
-1. **Scenario:** Despacho exitoso
-   - **Given:** Una ruta tiene paquetes asignados, vehículo con capacidad adecuada y conductor operativo disponible.
+## Acceptance Scenarios
+
+1. **Scenario:** Confirmación exitosa de despacho
+   - **Given:** Una ruta se encuentra en estado 'Lista para Despacho' con conductor operativo y vehículo físico disponible del tipo requerido.
    - **When:** El Despachador Logístico confirma el despacho.
-   - **Then:** La ruta y los paquetes pasan a estado 'En Tránsito', el conductor recibe la ruta en su dispositivo y el Sistema de Gestión de Paquetes (Módulo 1) es notificado para actualizar el estado de cada paquete a 'En Tránsito'.
+   - **Then:** El sistema asigna el conductor y el vehículo físico específico a la ruta, optimiza el orden de paradas, genera el manifiesto y la ruta pasa a estado 'Ruta Confirmada'. El conductor recibe la ruta en su dispositivo.
 
-2. **Scenario:** Despacho bloqueado — conductor no disponible
-   - **Given:** Una ruta tiene vehículo disponible pero el conductor asignado dejó de estar operativo.
+2. **Scenario:** Confirmación bloqueada — conductor no disponible
+   - **Given:** Una ruta está en estado 'Lista para Despacho' pero el conductor asignado dejó de estar operativo.
    - **When:** El Despachador intenta confirmar el despacho.
-   - **Then:** El sistema bloquea el despacho, informa la causa y sugiere reasignar un conductor habilitado. La ruta permanece en estado 'Listo para Despacho'.
+   - **Then:** El sistema bloquea la confirmación, informa la causa y sugiere reasignar un conductor habilitado antes de continuar.
 
-3. **Scenario:** Despacho bloqueado — sobrepeso
-   - **Given:** Un paquete agregado a la ruta lleva el peso total por encima de la capacidad permitida del vehículo asignado.
+3. **Scenario:** Confirmación bloqueada — vehículo físico no disponible
+   - **Given:** Una ruta está en estado 'Lista para Despacho' pero no hay vehículo físico disponible del tipo requerido al momento de confirmar.
    - **When:** El Despachador intenta confirmar el despacho.
-   - **Then:** El sistema bloquea el despacho, informa la causa y sugiere ajustar los paquetes o reasignar a un vehículo de mayor capacidad.
+   - **Then:** El sistema bloquea la confirmación, informa que no hay unidades disponibles del tipo requerido y queda a la espera de que el Despachador resuelva la situación.
 
-4. **Scenario:** Despacho con exclusión de paquete por novedad
-   - **Given:** Un paquete asignado a la ruta presenta una novedad física identificada antes del despacho.
-   - **When:** El Despachador confirma el despacho.
-   - **Then:** El paquete con novedad queda excluido de la ruta, cambia al estado correspondiente y se registra el motivo. La ruta se despacha con los paquetes restantes y el Sistema de Gestión de Paquetes (Módulo 1) es notificado del cambio de estado de cada paquete.
+4. **Scenario:** Exclusión de paquete por novedad física antes de confirmar
+   - **Given:** Una ruta está en estado 'Lista para Despacho' y el Despachador identifica que un paquete tiene una novedad física antes de confirmar.
+   - **When:** El Despachador excluye el paquete y confirma el despacho con los restantes.
+   - **Then:** El paquete excluido cambia al estado correspondiente con el motivo registrado. La ruta se confirma con los paquetes restantes y pasa a estado 'Ruta Confirmada'.
 
 ---
 
 ## Edge Cases
 
-- ¿Qué ocurre cuando la ruta está próxima a vencer la `fecha_limite_asignacion` de alguno de sus paquetes y aún no ha sido despachada?  
-  El sistema emite una alerta de alta prioridad al Despachador Logístico indicando cuáles paquetes están en riesgo de vencer su `fecha_limite_entrega`.
+- **¿Qué pasa si entre el momento en que la ruta pasa a 'Lista para Despacho' y el momento en que el Despachador la revisa, llega un paquete nuevo de la misma zona?**  
+  Una ruta en estado 'Lista para Despacho' no debe aceptar nuevos paquetes. El paquete nuevo debe crear una ruta distinta para esa zona.
 
-- ¿Qué ocurre cuando el vehículo asignado es dado de baja entre la planificación y el momento del despacho?  
-  El sistema bloquea el despacho e informa al Despachador que el vehículo ya no está disponible, solicitando reasignación antes de continuar.
-
-- ¿Puede el Despachador modificar el orden de paradas de una ruta después de confirmar el despacho?  
-  No. Los ajustes al orden de paradas solo pueden realizarse antes de confirmar el despacho. Una vez confirmado, el orden queda fijo.
+- **¿Puede el Despachador reasignar manualmente el conductor o el vehículo físico antes de confirmar?**  
+  Sí, el despachador puede modificar detalles de la ruta si lo considera necesario.
 
 ---
 
@@ -56,9 +55,24 @@
 
 | ID | Requisito |
 |---|---|
-| **FR-005** | El sistema DEBE bloquear el despacho si el peso total de los paquetes supera el umbral permitido del vehículo asignado. |
-| **FR-016** | El sistema DEBE notificar al Despachador Logístico ante cualquier bloqueo en el despacho de rutas. |
-| **FR-021** | El sistema DEBE registrar la `fecha_hora_inicio` de la ruta en el momento exacto en que el Despachador confirma el despacho. |
+| **FR-M2-009** | El sistema DEBE mostrar al Despachador Logístico todas las rutas en estado 'Lista para Despacho' con su detalle: zona, cantidad de paquetes, peso acumulado y tipo de vehículo requerido. |
+| **FR-M2-010** | El sistema DEBE permitir al Despachador confirmar cada ruta en estado 'Lista para Despacho'. |
+| **FR-M2-011** | Al confirmar el despacho, el sistema DEBE asignar el vehículo físico disponible del tipo requerido y el conductor operativo a la ruta. |
+| **FR-M2-012** | Al confirmar el despacho, el sistema DEBE optimizar el orden de paradas y generar el manifiesto de ruta para el conductor. |
+| **FR-M2-013** | Al confirmar el despacho, la ruta DEBE pasar a estado 'Ruta Confirmada' y el conductor DEBE recibir la ruta en su dispositivo. |
+| **FR-M2-014** | El sistema DEBE bloquear la confirmación si no hay conductor operativo o vehículo físico disponible del tipo requerido, informando la causa. |
+| **FR-M2-015** | El sistema DEBE permitir al Despachador excluir paquetes con novedades físicas antes de confirmar el despacho, registrando el motivo de exclusión. |
+| **FR-M2-016** | Una ruta en estado 'Lista para Despacho' NO DEBE aceptar nuevos paquetes. |
+
+---
+
+## Key Entities
+
+| Entidad | Atributos relevantes a esta historia |
+|---|---|
+| **Ruta** | `ruta_id`, `estado` (Lista para Despacho → Ruta Confirmada), `tipo_vehiculo_requerido`, `vehiculo_asignado` (se asigna al confirmar), `conductor_asignado` (se asigna al confirmar), `lista_paquetes`. |
+| **Vehículo** | `vehiculo_id`, `placa`, `tipo`, `estado` (Disponible / En Tránsito / En Mantenimiento). |
+| **Conductor** | `conductor_id`, `nombre`, `estado` (Operativo / No disponible), `vehiculo_asignado`. |
 
 ---
 
@@ -66,6 +80,5 @@
 
 | ID | Criterio |
 |---|---|
-| **SC-004** | El Conductor recibe la ruta en su dispositivo inmediatamente después de que el Despachador confirma el despacho. |
-| **SC-005** | El Sistema de Gestión de Paquetes (Módulo 1) recibe la notificación de cambio de estado a 'En Tránsito' para cada paquete de la ruta despachada. |
-| **SC-006** | La `fecha_hora_inicio` queda registrada en el momento exacto del despacho, sin margen de error. |
+| **SC-001** | Al confirmar el despacho, la ruta pasa a 'Ruta Confirmada' y el conductor recibe la ruta en su dispositivo en menos de 5 segundos. |
+| **SC-002** | El sistema bloquea el 100% de las confirmaciones cuando no hay conductor operativo o vehículo físico disponible del tipo requerido. |
