@@ -1,4 +1,4 @@
-# Feature Specification: Gestión de Vehículos de la Flota
+# Feature Specification: Gestión de Vehículos de la Flota (MOD2-UC-003)
 
 **Created:** 27/02/2026  
 **By:** Esteban Puello, Jose Rodriguez, Laura Perez, Robert Gonzalez
@@ -15,7 +15,9 @@
 
 **Independent Test:** Se puede probar registrando un vehículo y verificando que aparece como opción válida en el algoritmo de planificación con su capacidad correctamente reflejada.
 
-**Acceptance Scenarios:**
+---
+
+## Acceptance Scenarios
 
 1. **Scenario:** Registro exitoso
    - **Given:** El Administrador tiene sesión activa y el vehículo no existe en el sistema.
@@ -41,13 +43,13 @@
 
 ## Edge Cases
 
-- ¿Qué ocurre cuando se intenta dar de baja un vehículo que tiene una ruta en estado 'Lista para Despacho' (planificada pero aún no despachada)?  
-  El sistema bloquea la baja e informa al Administrador que el vehículo tiene una ruta pendiente de despacho. La baja solo puede realizarse una vez que la ruta sea despachada o cancelada.
+- **¿Qué ocurre cuando se intenta dar de baja un vehículo que tiene una ruta en estado 'Lista para Despacho' o 'Ruta Confirmada'?**  
+  El sistema bloquea la baja e informa al Administrador que el vehículo tiene una ruta pendiente. La baja solo puede realizarse una vez que la ruta haya sido despachada y cerrada.
 
-- ¿Qué ocurre cuando se actualiza la capacidad de peso de un vehículo que ya tiene paquetes asignados en una ruta pendiente de despacho?  
-  El sistema recalcula si los paquetes asignados siguen dentro del umbral permitido con la nueva capacidad. Si hay sobrepeso, alerta al Despachador Logístico para que ajuste los paquetes o reasigne el vehículo antes del despacho.
+- **¿Qué ocurre cuando se actualiza la capacidad de peso de un vehículo que ya tiene paquetes asignados en una ruta pendiente de despacho?**  
+  El sistema recalcula si los paquetes asignados siguen dentro del umbral permitido con la nueva capacidad. Si hay sobrepeso, alerta al Despachador Logístico para que ajuste los paquetes o reasigne el tipo de vehículo antes del despacho.
 
-- ¿Cómo maneja el sistema el intento de registrar un vehículo con capacidad de peso igual a 0 o negativa?  
+- **¿Cómo maneja el sistema el intento de registrar un vehículo con capacidad de peso igual a 0 o negativa?**  
   El sistema rechaza el registro con un mensaje de error de validación indicando que la capacidad de peso debe ser un valor positivo mayor a cero.
 
 ---
@@ -56,9 +58,9 @@
 
 | ID | Requisito |
 |---|---|
-| **FR-006** | El sistema DEBE permitir al Administrador de Flota registrar, actualizar y dar de baja vehículos de la flota. |
-| **FR-007** | El sistema DEBE impedir el registro de vehículos con placa duplicada. |
-| **FR-008** | El sistema DEBE impedir modificaciones o baja de vehículos con rutas activas en curso. |
+| **FR-009** | El sistema DEBE permitir al Administrador de Flota registrar, actualizar y dar de baja vehículos de la flota. |
+| **FR-010** | El sistema DEBE impedir el registro de vehículos con placa duplicada. |
+| **FR-011** | El sistema DEBE impedir modificaciones o baja de vehículos con rutas activas en curso. |
 
 ---
 
