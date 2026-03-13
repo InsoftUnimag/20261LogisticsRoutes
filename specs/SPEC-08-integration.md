@@ -141,6 +141,7 @@
 
 ---
 
+```
 ## 4. Módulo 2 → Módulo 3: Cierre de Ruta
 
 **Tipo:** Evento asíncrono (sin respuesta esperada)  
@@ -156,7 +157,8 @@
   "fecha_hora_cierre": "ISO8601",
   "conductor": {
     "conductor_id": "UUID",
-    "nombre": "string"
+    "nombre": "string",
+    "modelo_contrato": "Recorrido completo | Por Parada Realizada"  
   },
   "vehiculo": {
     "vehiculo_id": "UUID",
@@ -166,13 +168,14 @@
   "paradas": [
     {
       "paquete_id": "UUID",
-      "estado": "ENTREGADO | FALLIDO | NOVEDAD | SIN_GESTION_CONDUCTOR",
-      "motivo_novedad": "string | null",
+      "estado": "EXITOSA | FALLIDA | NOVEDAD | SIN_GESTION_CONDUCTOR",
+      "motivo_no_entrega": "DIRECCIÓN_INCORRECTA | CLIENTE_AUSENTE | RECHAZADO | ZONA DE DIFÍCIL ACESSO / ORDEN PÚBLICO",
       "fecha_hora_gestion": "ISO8601 | null"
     }
   ]
 }
 ```
+
 
 ### Notas
 - El conductor no tiene interacción directa con el Módulo 3. El envío de este evento es responsabilidad exclusiva del sistema.
