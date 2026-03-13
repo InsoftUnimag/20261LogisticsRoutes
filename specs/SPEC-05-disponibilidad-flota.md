@@ -23,7 +23,7 @@
    - **Then:** El sistema muestra el estado actualizado de cada vehículo con su conductor asignado, zona de operación y estado operativo.
 
 2. **Scenario:** Consulta sin vehículos disponibles
-   - **Given:** Todos los vehículos registrados se encuentran en un estado no disponible (en tránsito, inactivo o en mantenimiento).
+   - **Given:** Todos los vehículos registrados se encuentran en un estado diferente a "disponible" ("en_transito", "inactivo").
    - **When:** El Administrador consulta el panel de disponibilidad.
    - **Then:** El sistema informa que no hay vehículos disponibles y muestra el detalle del estado actual de cada uno.
 
@@ -35,7 +35,7 @@
   El panel se actualiza en tiempo real cada vez que cambia el estado de un vehículo. No hay un intervalo fijo de sincronización; el cambio de estado es el disparador de la actualización.
 
 - ¿Cómo se muestra un vehículo disponible pero sin conductor asignado?  
-  El panel lo diferencia visualmente de un vehículo disponible con conductor, dado que no puede ser tomado por el algoritmo de planificación aunque su estado técnico sea 'Disponible'.
+  El panel lo diferencia visualmente de un vehículo disponible con conductor, dado que no puede ser tomado por el algoritmo de planificación aunque su estado técnico sea "disponible".
 
 ---
 

@@ -18,17 +18,17 @@
 **Acceptance Scenarios:**
 
 1. **Scenario:** Asignación exitosa
-   - **Given:** Existe un vehículo en estado 'Disponible' y un conductor activo sin vehículo asignado.
+   - **Given:** Existe un vehículo en estado "disponible" y un conductor "activo" sin vehículo asignado.
    - **When:** El Administrador asigna el conductor al vehículo.
-   - **Then:** El sistema registra la asignación y el conductor queda vinculado al vehículo con estado operativo activo.
+   - **Then:** El sistema registra la asignación y el conductor queda vinculado al vehículo con estado operativo "activo".
 
 2. **Scenario:** Asignación bloqueada — conductor ya asignado
-   - **Given:** Un conductor ya se encuentra asignado a otro vehículo activo.
+   - **Given:** Un conductor ya se encuentra asignado a otro vehículo "activo".
    - **When:** El Administrador intenta asignarlo a un segundo vehículo.
    - **Then:** El sistema rechaza la asignación e informa que el conductor ya tiene un vehículo activo asignado.
 
 3. **Scenario:** Reasignación bloqueada — vehículo en tránsito
-   - **Given:** Un vehículo se encuentra en estado 'En Tránsito' con una ruta activa.
+   - **Given:** Un vehículo se encuentra en estado "en_transito" con una ruta activa.
    - **When:** El Administrador intenta cambiar el conductor asignado.
    - **Then:** El sistema rechaza la reasignación e informa que el vehículo tiene una ruta activa en curso.
 
@@ -48,8 +48,8 @@
 
 | ID | Requisito |
 |---|---|
-| **FR-009** | El sistema DEBE permitir al Administrador de Flota asignar un conductor activo a un vehículo en estado 'Disponible'. |
-| **FR-010** | El sistema DEBE impedir que un conductor sea asignado a más de un vehículo activo simultáneamente. |
+| **FR-009** | El sistema DEBE permitir al Administrador de Flota asignar un conductor "activo" a un vehículo en estado "disponible". |
+| **FR-010** | El sistema DEBE impedir que un conductor sea asignado a más de un vehículo "activo" simultáneamente. |
 | **FR-011** | El sistema DEBE impedir la reasignación de conductor en vehículos con rutas activas. |
 | **FR-012** | El sistema DEBE registrar el historial de asignaciones conductor-vehículo con fecha y hora de inicio y fin. |
 
@@ -59,6 +59,6 @@
 
 | ID | Criterio |
 |---|---|
-| **SC-010** | El sistema impide en todo momento que un conductor esté asignado a más de un vehículo activo simultáneamente, sin excepción. |
+| **SC-010** | El sistema impide en todo momento que un conductor esté asignado a más de un vehículo "activo" simultáneamente, sin excepción. |
 | **SC-011** | El historial de asignaciones queda disponible con fecha y hora de inicio y fin para consulta y auditoría por parte del Administrador. |
 | **SC-012** | Un vehículo sin conductor asignado queda excluido del algoritmo de planificación de forma inmediata tras la desvinculación. |
