@@ -3,8 +3,7 @@
 ---
 
 ## Despachador Logístico
-Es el operador encargado de confirmar físicamente que los paquetes están cargados en el vehículo y ejecutar el despacho de la ruta. Es el puente entre la planificación automática del sistema y la operación real en campo. Sin su confirmación, ninguna ruta pasa de planificada a activa. También recibe alertas cuando hay bloqueos en la planificación o cierres automáticos por tiempo excedido.
-
+Es el operador encargado de revisar las rutas en estado 'Lista para Despacho' y confirmar su despacho desde su panel. Es el puente entre la planificación automática del sistema y la operación real en campo. Sin su confirmación, ninguna ruta pasa a manos del conductor. También recibe alertas cuando hay bloqueos en la planificación, rutas próximas a vencer su plazo y cierres automáticos por tiempo excedido.
 ---
 
 ## Conductor
@@ -18,9 +17,9 @@ Es el responsable de mantener el inventario de vehículos actualizado y garantiz
 ---
 
 ## Sistema de Gestión de Paquetes
-Es el sistema externo que actúa como disparador del flujo logístico. Solicita una ruta cuando un paquete alcanza el estado 'Listo para Despacho' y recibe en tiempo real las notificaciones de cambio de estado de cada paquete conforme el conductor va registrando sus paradas. Es el sistema que mantiene la trazabilidad del ciclo de vida de cada paquete.
-
+Es el sistema externo que actúa como disparador del flujo logístico. Emite el evento SOLICITAR_RUTA cuando un paquete alcanza el estado 'Recibido en Sede' y recibe en tiempo real los eventos de cambio de estado de cada paquete conforme el conductor va registrando sus paradas. Es el sistema que mantiene la trazabilidad del ciclo de vida de cada paquete.
 ---
 
 ## Sistema de Facturación y Liquidación
-Es el sistema externo que recibe el evento `ruta_cerrada` al finalizar una ruta. Con esa información calcula y emite la liquidación correspondiente al conductor. No interactúa con ningún actor directamente — solo recibe el informe consolidado que el sistema de rutas genera al cierre.
+Es el sistema externo que recibe el evento `cierre_ruta` al finalizar una ruta. Con esa información calcula y emite la liquidación correspondiente al conductor. No interactúa con ningún actor directamente — solo recibe el informe consolidado que el sistema de rutas genera al cierre.
+
