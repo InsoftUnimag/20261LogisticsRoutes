@@ -13,7 +13,7 @@
 
 **Why this priority:** Es el punto de activación de la operación de entrega. Sin la confirmación del despachador, ninguna ruta planificada puede pasar a manos del conductor.
 
-**Independent Test:** Se puede probar tomando una ruta en estado 'Lista para Despacho', ejecutando la confirmación y verificando que la ruta pasa a 'Ruta Confirmada', el conductor y vehículo físico quedan asignados y el conductor puede ver la ruta en su dispositivo.
+**Independent Test:** Se puede probar tomando una ruta en estado "lista_para_despacho", ejecutando la confirmación y verificando que la ruta pasa a "confirmada", el conductor y vehículo físico quedan asignados y el conductor puede ver la ruta en su dispositivo.
 
 ---
 
@@ -22,22 +22,22 @@
 1. **Scenario:** Confirmación exitosa de despacho
    - **Given:** Una ruta se encuentra en estado "lista_para_despacho" con conductor "activo" y vehículo físico "disponible" del tipo requerido.
    - **When:** El Despachador Logístico confirma el despacho.
-   - **Then:** El sistema asigna el conductor y el vehículo físico específico a la ruta, optimiza el orden de paradas, genera el manifiesto y la ruta pasa a estado 'Ruta Confirmada'. El conductor recibe la ruta en su dispositivo.
+   - **Then:** El sistema asigna el conductor y el vehículo físico específico a la ruta, optimiza el orden de paradas, genera el manifiesto y la ruta pasa a estado "confirmada". El conductor recibe la ruta en su dispositivo.
 
 2. **Scenario:** Confirmación bloqueada — conductor no disponible
-   - **Given:** Una ruta está en estado 'Lista para Despacho' pero el conductor asignado dejó de estar operativo.
+   - **Given:** Una ruta está en estado "lista_para_despacho" pero el conductor asignado dejó de estar "activo".
    - **When:** El Despachador intenta confirmar el despacho.
    - **Then:** El sistema bloquea la confirmación, informa la causa y sugiere reasignar un conductor habilitado antes de continuar.
 
 3. **Scenario:** Confirmación bloqueada — vehículo físico no disponible
-   - **Given:** Una ruta está en estado 'Lista para Despacho' pero no hay vehículo físico disponible del tipo requerido al momento de confirmar.
+   - **Given:** Una ruta está en estado "lista_para_despacho" pero no hay vehículo físico "disponible" del tipo requerido al momento de confirmar.
    - **When:** El Despachador intenta confirmar el despacho.
    - **Then:** El sistema bloquea la confirmación, informa que no hay unidades disponibles del tipo requerido y queda a la espera de que el Despachador resuelva la situación.
 
 4. **Scenario:** Exclusión de paquete por novedad física antes de confirmar
-   - **Given:** Una ruta está en estado 'Lista para Despacho' y el Despachador identifica que un paquete tiene una novedad física antes de confirmar.
+   - **Given:** Una ruta está en estado "lista_para_despacho" y el Despachador identifica que un paquete tiene una novedad física antes de confirmar.
    - **When:** El Despachador excluye el paquete y confirma el despacho con los restantes.
-   - **Then:** El paquete excluido cambia al estado correspondiente con el motivo registrado. La ruta se confirma con los paquetes restantes y pasa a estado 'Ruta Confirmada'.
+   - **Then:** El paquete excluido cambia al estado correspondiente con el motivo registrado. La ruta se confirma con los paquetes restantes y pasa a estado "confirmada".
 
 ---
 
@@ -59,8 +59,8 @@
 | **FR-M2-010** | El sistema DEBE permitir al Despachador confirmar cada ruta en estado "lista_para_despacho". |
 | **FR-M2-011** | Al confirmar el despacho, el sistema DEBE asignar el vehículo físico "disponible" del tipo requerido y el conductor "activo" a la ruta. |
 | **FR-M2-012** | Al confirmar el despacho, el sistema DEBE optimizar el orden de paradas y generar el manifiesto de ruta para el conductor. |
-| **FR-M2-013** | Al confirmar el despacho, la ruta DEBE pasar a estado 'Ruta Confirmada' y el conductor DEBE recibir la ruta en su dispositivo. |
-| **FR-M2-014** | El sistema DEBE bloquear la confirmación si no hay conductor operativo o vehículo físico disponible del tipo requerido, informando la causa. |
+| **FR-M2-013** | Al confirmar el despacho, la ruta DEBE pasar a estado "confirmada" y el conductor DEBE recibir la ruta en su dispositivo. |
+| **FR-M2-014** | El sistema DEBE bloquear la confirmación si no hay conductor "activo" o vehículo físico "disponible" del tipo requerido, informando la causa. |
 | **FR-M2-015** | El sistema DEBE permitir al Despachador excluir paquetes con novedades físicas antes de confirmar el despacho, registrando el motivo de exclusión. |
 | **FR-M2-016** | Una ruta en estado "lista_para_despacho" NO DEBE aceptar nuevos paquetes. |
 
@@ -70,9 +70,9 @@
 
 | Entidad | Atributos relevantes a esta historia |
 |---|---|
-| **Ruta** | `ruta_id`, `estado` (Lista para Despacho → Ruta Confirmada), `tipo_vehiculo_requerido`, `vehiculo_asignado` (se asigna al confirmar), `conductor_asignado` (se asigna al confirmar), `lista_paquetes`. |
-| **Vehículo** | `vehiculo_id`, `placa`, `tipo`, `estado` (Disponible / En Tránsito / En Mantenimiento). |
-| **Conductor** | `conductor_id`, `nombre`, `estado` (Operativo / No disponible), `vehiculo_asignado`. |
+| **Ruta** | `ruta_id`, `estado` ("lista_para_despacho" → "confirmada"), `tipo_vehiculo_requerido`, `vehiculo_asignado` (se asigna al confirmar), `conductor_asignado` (se asigna al confirmar), `lista_paquetes`. |
+| **Vehículo** | `vehiculo_id`, `placa`, `tipo`, `estado` ("disponible" / "en_transito" / "inactivo"). |
+| **Conductor** | `conductor_id`, `nombre`, `estado` ("activo" / "inactivo" / "en_ruta"), `vehiculo_asignado`. |
 
 ---
 
@@ -80,5 +80,5 @@
 
 | ID | Criterio |
 |---|---|
-| **SC-001** | Al confirmar el despacho, la ruta pasa a 'Ruta Confirmada' y el conductor recibe la ruta en su dispositivo en menos de 5 segundos. |
-| **SC-002** | El sistema bloquea el 100% de las confirmaciones cuando no hay conductor operativo o vehículo físico disponible del tipo requerido. |
+| **SC-001** | Al confirmar el despacho, la ruta pasa a "confirmada" y el conductor recibe la ruta en su dispositivo en menos de 5 segundos. |
+| **SC-002** | El sistema bloquea el 100% de las confirmaciones cuando no hay conductor "activo" o vehículo físico "disponible" del tipo requerido. |
