@@ -22,7 +22,7 @@
 1. **Scenario:** Confirmación exitosa de despacho
    - **Given:** Una ruta se encuentra en estado "lista_para_despacho" con conductor "activo" y vehículo físico "disponible" del tipo requerido.
    - **When:** El Despachador Logístico confirma el despacho.
-   - **Then:** El sistema asigna el conductor y el vehículo físico específico a la ruta, optimiza el orden de paradas, genera el manifiesto y la ruta pasa a estado "confirmada". El conductor recibe la ruta en su dispositivo.
+   - **Then:** El sistema asigna el conductor y el vehículo físico específico a la ruta, les canbia su respectivo estado a "en_ruta" y "en_transito", optimiza el orden de paradas, genera el manifiesto y la ruta pasa a estado "confirmada". El conductor recibe la ruta en su dispositivo.
 
 2. **Scenario:** Confirmación bloqueada — conductor no disponible
    - **Given:** Una ruta está en estado "lista_para_despacho" pero el conductor asignado dejó de estar "activo".
