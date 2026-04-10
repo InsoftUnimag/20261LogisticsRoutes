@@ -34,11 +34,11 @@
    - **When:** El Despachador intenta confirmar el despacho.
    - **Then:** El sistema bloquea la confirmación, informa que no hay unidades disponibles del tipo requerido y queda a la espera de que el Despachador resuelva la situación.
 
-4. **Scenario:** Exclusión de paquete por novedad física antes de confirmar
+4. **Scenario:** Exclusión de parada por novedad física del paquete antes de confirmar
    - **Given:** Una ruta está en estado "lista_para_despacho" y el Despachador identifica que un paquete tiene una novedad física antes de confirmar.
-   - **When:** El Despachador excluye el paquete y confirma el despacho con los restantes.
-   - **Then:** El paquete excluido cambia al estado correspondiente con el motivo registrado. La ruta se confirma con los paquetes restantes y pasa a estado "confirmada".
-
+   - **When:** El Despachador excluye la parada y confirma el despacho con las restantes.
+   - **Then:** El paquete de la parada excluida cambia al estado correspondiente con el motivo registrado. La ruta se confirma con las paradas restantes y pasa a estado "confirmada". La parada pasa a estado "excluida_despacho".
+    
 ---
 
 ## Edge Cases
@@ -53,16 +53,18 @@
 
 ## Functional Requirements
 
-| ID | Requisito |
-|---|---|
-| **FR-M2-009** | El sistema DEBE mostrar al Despachador Logístico todas las rutas en estado "lista_para_despacho" con su detalle: zona, cantidad de paquetes, peso acumulado y tipo de vehículo requerido. |
-| **FR-M2-010** | El sistema DEBE permitir al Despachador confirmar cada ruta en estado "lista_para_despacho". |
-| **FR-M2-011** | Al confirmar el despacho, el sistema DEBE asignar el vehículo físico "disponible" del tipo requerido y el conductor "activo" a la ruta. |
-| **FR-M2-012** | Al confirmar el despacho, el sistema DEBE optimizar el orden de paradas y generar el manifiesto de ruta para el conductor. |
-| **FR-M2-013** | Al confirmar el despacho, la ruta DEBE pasar a estado "confirmada" y el conductor DEBE recibir la ruta en su dispositivo. |
-| **FR-M2-014** | El sistema DEBE bloquear la confirmación si no hay conductor "activo" o vehículo físico "disponible" del tipo requerido, informando la causa. |
-| **FR-M2-015** | El sistema DEBE permitir al Despachador excluir paquetes con novedades físicas antes de confirmar el despacho, registrando el motivo de exclusión. |
-| **FR-M2-016** | Una ruta en estado "lista_para_despacho" NO DEBE aceptar nuevos paquetes. |
+| ID            | Requisito                                                                                                                                                                                |
+|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **FR-M2-009** | El sistema DEBE mostrar al Despachador Logístico todas las rutas en estado "lista_para_despacho" con su detalle: zona, cantidad de paradas, peso acumulado y tipo de vehículo requerido. |
+| **FR-M2-010** | El sistema DEBE permitir al Despachador confirmar cada ruta en estado "lista_para_despacho".                                                                                             |
+| **FR-M2-011** | Al confirmar el despacho, el sistema DEBE asignar el vehículo físico "disponible" del tipo requerido y el conductor "activo" a la ruta.                                                  |
+| **FR-M2-012** | Al confirmar el despacho, el sistema DEBE optimizar el orden de paradas y generar el manifiesto de ruta para el conductor.                                                               |
+| **FR-M2-013** | Al confirmar el despacho, la ruta DEBE pasar a estado "confirmada" y el conductor DEBE recibir la ruta en su dispositivo.                                                                |
+| **FR-M2-014** | El sistema DEBE bloquear la confirmación si no hay conductor "activo" o vehículo físico "disponible" del tipo requerido, informando la causa.                                            |
+| **FR-M2-015** | El sistema DEBE permitir al Despachador excluir paradas con paquetes que tengan novedades físicas antes de confirmar el despacho, registrando el motivo de exclusión.                    |
+| **FR-M2-016** | Una ruta en estado "lista_para_despacho" NO DEBE aceptar nuevos paquetes.                                                                                                                |
+| **FR-M2-017** | Al excluir un paquete de una ruta en estado "lista_para_despacho", el sistema DEBE emitir el evento PAQUETE_EXCLUIDO_DESPACHO al Sistema de Gestión de Paquetes                          |
+
 
 ---
 

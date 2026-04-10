@@ -53,17 +53,17 @@
 1. **Scenario:** Cierre exitoso con todas las paradas gestionadas
    - **Given:** El Conductor ha gestionado todas las paradas de la ruta con su respectivo estado ("exitosa", "fallida" o "novedad").
    - **When:** Solicita el cierre de la ruta.
-   - **Then:** La ruta cambia a estado "cerrada", el sistema genera y envía al Sistema de Facturación y Liquidación el evento "cierre_ruta" con el detalle completo de todas las paradas.
+   - **Then:** La ruta cambia a estado "cerrada", el sistema genera y envía al Sistema de Facturación y Liquidación el evento "cierre_ruta" con el detalle completo de todas las paradas. El estado del vehículo pasa a "disponible" y el estado del conductor a "activo".  
 
 2. **Scenario:** Intento de cierre con paradas pendientes
    - **Given:** El Conductor intenta cerrar la ruta pero existen paradas en estado "pendiente".
    - **When:** Solicita el cierre de la ruta.
-   - **Then:** El sistema informa cuáles paradas están con estado "pendiente", advierte que si no las gestiona el sistema cerrará la ruta automáticamente al vencer el tiempo límite de 2 días en tránsito, y le da la opción de gestionar las pendientes o confirmar el cierre manual asumiendo que el sistema marcará las restantes como "sin_gestion_conductor" y la ruta cambia a estado "cerrada".
+   - **Then:** El sistema informa cuáles paradas están con estado "pendiente", advierte que si no las gestiona el sistema cerrará la ruta automáticamente al vencer el tiempo límite de 2 días en tránsito, y le da la opción de gestionar las pendientes o confirmar el cierre manual asumiendo que el sistema marcará las restantes como "sin_gestion_conductor" y la ruta cambia a estado "cerrada".El estado del vehículo pasa a "disponible" y el estado del conductor a "activo".
 
 3. **Scenario:** Cierre automático por tiempo excedido
    - **Given:** La ruta lleva más de 2 días en estado "en_transito" sin que el conductor haya ejecutado el cierre manual y existen paradas con estado "pendiente".
    - **When:** El sistema detecta que se superaron los 2 días en tránsito.
-   - **Then:** El sistema cambia las paradas con estado "pendiente" a "sin_gestion_conductor" con origen "sistema", cambia el estado de la ruta a "cerrada_automatica", genera y envía el evento "cierre_ruta" al Sistema de Facturación y Liquidación con tipo de cierre automático, envia el evento "paradas_sin_gestionar" al Sistema de Gestión de Paquetes el estado final de cada paquete y envía alerta de alta prioridad al Despachador Logístico.
+   - **Then:** El sistema cambia las paradas con estado "pendiente" a "sin_gestion_conductor" con origen "sistema", cambia el estado de la ruta a "cerrada_automatica", genera y envía el evento "cierre_ruta" al Sistema de Facturación y Liquidación con tipo de cierre automático, envia el evento "paradas_sin_gestionar" al Sistema de Gestión de Paquetes el estado final de cada paquete y envía alerta de alta prioridad al Despachador Logístico.El estado del vehículo pasa a "disponible" y el estado del conductor a "activo".
 
 ---
 
@@ -82,14 +82,14 @@
 
 ## Functional Requirements
 
-| ID | Requisito |
-|---|---|
-| **FR-013** | El sistema DEBE permitir al Conductor registrar el resultado de cada parada: "exitosa", "fallida" con motivo, o "novedad" grave. |
-| **FR-014** | El sistema DEBE notificar al Sistema de Gestión de Paquetes en tiempo real el estado de cada parada ("exitosa", parada "fallida" con motivo, "novedad" grave). |
-| **FR-015** | El sistema DEBE enviar el evento `ruta_cerrada` al Sistema de Facturación y Liquidación al cerrar una ruta. |
-| **FR-017** | El sistema DEBE cerrar automáticamente las rutas que superen 2 días en estado "en_transito" sin cierre manual del conductor. |
-| **FR-018** | El sistema DEBE marcar las paradas en estado "pendiente" a estado "sin_gestion_conductor" y origen "sistema" al momento del cierre automático o forzado. |
-| **FR-019** | El sistema DEBE notificar al Sistema de Gestión de Paquetes el estado final de cada paquete al cierre de ruta, ya sea manual, automático o forzado. |
+| ID | Requisito                                                                                                                                                                                          |
+|---|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **FR-013** | El sistema DEBE permitir al Conductor registrar el resultado de cada parada: "exitosa", "fallida" con motivo, o "novedad" grave.                                                                   |
+| **FR-014** | El sistema DEBE notificar al Sistema de Gestión de Paquetes en tiempo real el estado de cada parada ("exitosa", parada "fallida" con motivo, "novedad" grave).                                     |
+| **FR-015** | El sistema DEBE enviar el evento `ruta_cerrada` al Sistema de Facturación y Liquidación al cerrar una ruta.                                                                                        |
+| **FR-017** | El sistema DEBE cerrar automáticamente las rutas que superen 2 días en estado "en_transito" sin cierre manual del conductor.                                                                       |
+| **FR-018** | El sistema DEBE marcar las paradas en estado "pendiente" a estado "sin_gestion_conductor" y origen "sistema" al momento del cierre automático o forzado.                                           |
+| **FR-019** | El sistema DEBE notificar al Sistema de Gestión de Paquetes el estado final de cada parada que no fue gestionada al momento en que se hizo un cierre de ruta, ya sea automático o forzado.         |
 | **FR-020** | El sistema NO DEBE permitir que el conductor interactúe directamente con el Sistema de Facturación y Liquidación. El envío del evento de cierre es responsabilidad exclusiva del sistema de rutas. |
 
 ---

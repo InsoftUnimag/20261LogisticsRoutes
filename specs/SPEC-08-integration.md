@@ -8,15 +8,18 @@
 
 ## 1. Resumen de Integraciones
 
-| # | Emisor | Receptor | Tipo | Disparador |
-|---|---|---|---|---|
-| 1 | Módulo 1 | Módulo 2 | Asíncrono | Paquete alcanza estado `Recibido en Sede` |
-| 2 | Módulo 2 | Módulo 1 | Asíncrono | Conductor confirma inicio de tránsito |
-| 3 | Módulo 2 | Módulo 1 | Asíncrono | Conductor registra entrega exitosa |
-| 4 | Módulo 2 | Módulo 1 | Asíncrono | Conductor registra parada fallida |
-| 5 | Módulo 2 | Módulo 1 | Asíncrono | Conductor registra novedad grave |
-| 6 | Módulo 2 | Módulo 1 | Asíncrono | Ruta cerrada automaticamente o forzada |
-| 7 | Módulo 2 | Módulo 3 | Asíncrono | Cierre de ruta (resumen para liquidación) |
+| # | Emisor   | Receptor | Tipo      | Disparador                                                      |
+|---|----------|----------|-----------|-----------------------------------------------------------------|
+| 1 | Módulo 1 | Módulo 2 | Asíncrono | Paquete alcanza estado `Recibido en Sede`                       |
+| 2 | Módulo 2 | Módulo 1 | Asincrono | 'ruta_id'                                                       |
+| 3 | Módulo 2 | Módulo 1 | Asíncrono | Conductor confirma inicio de tránsito                           |
+| 4 | Módulo 2 | Módulo 1 | Asíncrono | Conductor registra entrega exitosa                              |
+| 5 | Módulo 2 | Módulo 1 | Asíncrono | Conductor registra parada fallida                               |
+| 6 | Módulo 2 | Módulo 1 | Asíncrono | Conductor registra novedad grave                                |
+| 7 | Módulo 2 | Módulo 1 | Asíncrono | Ruta cerrada automaticamente o forzada                          |
+| 8 | Módulo 2 | Módulo 3 | Asíncrono | Cierre de ruta (resumen para liquidación)                       |
+| 9 | Módulo 2 | Módulo 1 | Asíncrono | Despachador excluye una parada de una ruta antes de confirmarla |
+
 
 ---
 
@@ -33,6 +36,7 @@
   "paquete_id": "UUID",
   "peso_kg": "float",
   "volumen_m3": "float",
+  "direccion": "string",
   "latitud": "float",
   "longitud": "float",
   "fecha_limite_entrega": "ISO8601",
@@ -139,9 +143,23 @@
   ]
 }
 
+```
 ---
 
+### Evento 6 — Paquete excluido por Despachador
+
+**Disparador**: El Despachador excluye una parada de una ruta en estado "lista_para_despacho" antes de confirmarla.
+**Acción esperada en M1**: Actualizar el estado del paquete y gestionar la novedad correspondiente.
+
+```json
+{
+  "tipo_evento": "PAQUETE_EXCLUIDO_DESPACHO",
+  "paquete_id": "UUID",
+  "ruta_id": "UUID",
+  "fecha_hora_evento": "ISO8601"
+}
 ```
+
 ## 4. Módulo 2 → Módulo 3: Cierre de Ruta
 
 **Tipo:** Evento asíncrono (sin respuesta esperada)  
@@ -189,7 +207,7 @@ Todos los módulos deben reconocer los siguientes estados de ruta como válidos:
 
 | Estado | Descripción |
 |---|---|
-| `CREADA` | La ruta existe y está acumulando paquetes. |
+| `CREADA` | La ruta existe y está acumulando Paradas en estado "pendiente". Cada nueva Parada representa un paquete a entregar en esa zona. |
 | `LISTA_PARA_DESPACHO` | La ruta alcanzó condición de salida. Espera confirmación del Despachador. |
 | `CONFIRMADA` | El Despachador confirmó. Conductor y vehículo físico asignados. |
 | `EN_TRANSITO` | El conductor confirmó inicio. Paquetes en camino. |
