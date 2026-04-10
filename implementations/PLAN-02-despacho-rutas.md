@@ -39,6 +39,7 @@ domain/
         ├── RutaRepositoryPort.java        [existente — PLAN-00, se extiende]
         ├── VehiculoRepositoryPort.java    [existente — PLAN-00]
         ├── ConductorRepositoryPort.java   [existente — PLAN-00]
+        ├── IntegracionModulo1Port.java    [existente — PLAN-00]
         └── NotificacionDespachadorPort.java [existente — PLAN-00]
 
 application/
@@ -114,7 +115,7 @@ infrastructure/
   - Entonces: lanza excepción con mensaje claro. Ruta no cambia de estado.
 
 - [ ] T211 [US2] `DespachoServiceTest` — exclusión de paquete antes de confirmar:
-  - `excluirPaquete(rutaId, paqueteId, motivo)` → parada queda marcada con estado `FALLIDA` + motivo. Ruta sigue en `LISTA_PARA_DESPACHO`.
+  - `excluirPaquete(rutaId, paqueteId, motivo)` → parada queda marcada con estado `EXCLUIDA_DESPACHO` + motivo. `IntegracionModulo1Port.publishPaqueteExcluidoDespacho()` llamado. Ruta sigue en `LISTA_PARA_DESPACHO`.
 
 - [ ] T212 [US2] `DespachoServiceTest` — optimización de paradas:
   - `optimizarOrdenParadas(paradas)` ordena la lista por nearest-neighbor desde el punto de origen. Verifica que el orden resultante tiene menor distancia total que el orden original.
@@ -132,6 +133,7 @@ public class DespachoService implements DespachoRouteUseCase {
     private final RutaRepositoryPort rutaRepository;
     private final VehiculoRepositoryPort vehiculoRepository;
     private final ConductorRepositoryPort conductorRepository;
+    private final IntegracionModulo1Port integracionM1;
     private final NotificacionDespachadorPort notificacion;
 
     @Override

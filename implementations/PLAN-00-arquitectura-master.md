@@ -96,6 +96,7 @@ src/main/java/com/logistics/routes/
 │   │   ├── EstadoVehiculo.java
 │   │   ├── EstadoConductor.java
 │   │   ├── EstadoParada.java
+│   │   │   └── PENDIENTE, EXITOSA, FALLIDA, NOVEDAD, SIN_GESTION_CONDUCTOR, EXCLUIDA_DESPACHO
 │   │   ├── MotivoNovedad.java
 │   │   ├── OrigenParada.java
 │   │   └── TipoCierre.java
@@ -213,7 +214,7 @@ CREATE TYPE estado_ruta AS ENUM (
 CREATE TYPE tipo_vehiculo  AS ENUM ('MOTO', 'VAN', 'NHR', 'TURBO');
 CREATE TYPE estado_vehiculo AS ENUM ('DISPONIBLE', 'EN_TRANSITO', 'INACTIVO');
 CREATE TYPE estado_conductor AS ENUM ('ACTIVO', 'INACTIVO', 'EN_RUTA');
-CREATE TYPE estado_parada AS ENUM ('PENDIENTE','EXITOSA','FALLIDA','NOVEDAD','SIN_GESTION_CONDUCTOR');
+CREATE TYPE estado_parada AS ENUM ('PENDIENTE','EXITOSA','FALLIDA','NOVEDAD','SIN_GESTION_CONDUCTOR','EXCLUIDA_DESPACHO');
 CREATE TYPE motivo_novedad AS ENUM (
     'CLIENTE_AUSENTE','DIRECCION_INCORRECTA','ZONA_DIFICIL_ACCESO',
     'RECHAZADO_POR_CLIENTE','DAÑADO_EN_RUTA','EXTRAVIADO','DEVOLUCION'
@@ -375,6 +376,7 @@ interface IntegracionModulo1Port {
     void publishParadaFallida(UUID paqueteId, UUID rutaId, Instant fecha, MotivoNovedad motivo);
     void publishNovedadGrave(UUID paqueteId, UUID rutaId, Instant fecha, MotivoNovedad tipoNovedad);
     void publishParadasSinGestionar(UUID rutaId, TipoCierre tipoCierre, List<UUID> paqueteIds);
+    void publishPaqueteExcluidoDespacho(UUID paqueteId, UUID rutaId, Instant fecha);
 }
 
 interface IntegracionModulo3Port {

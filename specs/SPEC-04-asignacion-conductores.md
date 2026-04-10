@@ -46,12 +46,12 @@
 
 ## Functional Requirements
 
-| ID | Requisito |
-|---|---|
-| **FR-009** | El sistema DEBE permitir al Administrador de Flota asignar un conductor "activo" a un vehículo en estado "disponible". |
-| **FR-010** | El sistema DEBE impedir que un conductor sea asignado a más de un vehículo "activo" simultáneamente. |
-| **FR-011** | El sistema DEBE impedir la reasignación de conductor en vehículos con rutas activas. |
-| **FR-012** | El sistema DEBE registrar el historial de asignaciones conductor-vehículo con fecha y hora de inicio y fin. |
+| ID         | Requisito |
+|------------|---|
+| **FR-018** | El sistema DEBE permitir al Administrador de Flota asignar un conductor "activo" a un vehículo en estado "disponible". |
+| **FR-019** | El sistema DEBE impedir que un conductor sea asignado a más de un vehículo "activo" simultáneamente. |
+| **FR-020** | El sistema DEBE impedir la reasignación de conductor en vehículos con rutas activas. |
+| **FR-021** | El sistema DEBE registrar el historial de asignaciones conductor-vehículo con fecha y hora de inicio y fin. |
 
 ---
 

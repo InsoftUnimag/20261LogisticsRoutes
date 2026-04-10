@@ -450,6 +450,7 @@ public void registrarResultadoParada(UUID rutaId, RegistrarParadaCommand command
 
 - [ ] T422 [P] [US7b] `CierreRutaServiceTest` — cierre exitoso con todas las paradas gestionadas:
   - No hay paradas `PENDIENTE` → ruta `CERRADA_MANUAL`. `IntegracionModulo3Port.publishRutaCerrada()` llamado.
+  - Vehículo pasa a `DISPONIBLE` y conductor pasa a `ACTIVO`.
 
 - [ ] T423 [P] [US7b] `CierreRutaServiceTest` — cierre con paradas pendientes sin confirmar:
   - `confirmarConPendientes = false` → retorna lista de paradas pendientes. No cierra.
@@ -516,6 +517,14 @@ public class CierreRutaService {
         rutaRepository.guardar(ruta);
 
         publishRutaCerrada(ruta);
+
+        // Liberar vehículo y conductor (SPEC-07 scenarios 1, 2, 3)
+        Vehiculo vehiculo = vehiculoRepository.buscarPorId(ruta.vehiculoId()).orElseThrow();
+        Conductor conductor = conductorRepository.buscarPorId(ruta.conductorId()).orElseThrow();
+        vehiculo.marcarDisponible();
+        conductor.marcarActivo();
+        vehiculoRepository.guardar(vehiculo);
+        conductorRepository.guardar(conductor);
 
         return CierreRutaResult.exitoso();
     }

@@ -58,9 +58,9 @@
 
 | ID | Requisito |
 |---|---|
-| **FR-009** | El sistema DEBE permitir al Administrador de Flota registrar, actualizar y dar de baja vehículos de la flota. |
-| **FR-010** | El sistema DEBE impedir el registro de vehículos con placa duplicada. |
-| **FR-011** | El sistema DEBE impedir modificaciones o baja de vehículos con rutas activas en curso. |
+| **FR-022** | El sistema DEBE permitir al Administrador de Flota registrar, actualizar y dar de baja vehículos de la flota. |
+| **FR-023** | El sistema DEBE impedir el registro de vehículos con placa duplicada. |
+| **FR-024** | El sistema DEBE impedir modificaciones o baja de vehículos con rutas activas en curso. |
 
 ---
 

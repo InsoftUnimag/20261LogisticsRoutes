@@ -40,7 +40,8 @@
   "latitud": "float",
   "longitud": "float",
   "fecha_limite_entrega": "ISO8601",
-  "tipo_mercancia": "FRAGIL | PELIGROSO | ESTANDAR"
+  "tipo_mercancia": "FRAGIL | PELIGROSO | ESTANDAR",
+  "metodo_pago": "PREPAGO | CONTRA_ENTREGA"
 }
 ```
 
@@ -107,7 +108,7 @@
   "paquete_id": "UUID",
   "ruta_id": "UUID",
   "fecha_hora_evento": "ISO8601",
-  "motivo": "CLIENTE_AUSENTE | DIRECCION_INCORRECTA | RECHAZADO_CLIENTE | ZONA_DIFICIL_ACCESO"
+  "motivo": "CLIENTE_AUSENTE | DIRECCION_INCORRECTA | RECHAZADO_POR_CLIENTE | ZONA_DIFICIL_ACCESO"
 }
 ```
 
@@ -124,7 +125,7 @@
   "paquete_id": "UUID",
   "ruta_id": "UUID",
   "fecha_hora_evento": "ISO8601",
-  "tipo_novedad": "DAÑADO | EXTRAVIADO | DEVOLUCION"
+  "tipo_novedad": "DAÑADO_EN_RUTA | EXTRAVIADO | DEVOLUCION"
 }
 
 ```
@@ -187,7 +188,7 @@
     {
       "paquete_id": "UUID",
       "estado": "EXITOSA | FALLIDA | NOVEDAD | SIN_GESTION_CONDUCTOR",
-      "motivo_no_entrega": "DIRECCIÓN_INCORRECTA | CLIENTE_AUSENTE | RECHAZADO | ZONA DE DIFÍCIL ACESSO / ORDEN PÚBLICO",
+      "motivo_no_entrega": "CLIENTE_AUSENTE | DIRECCION_INCORRECTA | RECHAZADO_POR_CLIENTE | ZONA_DIFICIL_ACCESO | DAÑADO_EN_RUTA | EXTRAVIADO | DEVOLUCION | null",
       "fecha_hora_gestion": "ISO8601 | null"
     }
   ]
