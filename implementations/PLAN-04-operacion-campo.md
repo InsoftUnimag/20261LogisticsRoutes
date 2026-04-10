@@ -15,11 +15,6 @@
 
 Este plan cubre la experiencia completa del conductor en campo: consulta de la ruta asignada con sus paradas ordenadas, inicio del tránsito (transición a `EN_TRANSITO` + eventos al Módulo 1 via **SQS**), registro del resultado de cada parada (exitosa con POD en **S3**, fallida, novedad grave — todos con eventos al Módulo 1 via SQS), cierre manual de ruta y evento `RUTA_CERRADA` al Módulo 3, cierre automático por exceder 2 días en tránsito (scheduler con **ShedLock**), y cierre forzado por el Despachador.
 
-> **Cambio respecto al plan original:**  
-> - `IntegracionExternaService` (stub) → reemplazado por dos adaptadores SQS reales: `SqsIntegracionModulo1Adapter` e `SqsIntegracionModulo3Adapter`.  
-> - `ConductorController` → renombrado a `ConductorOperacionController` (el `ConductorController` admin ya existe en PLAN-03).  
-> - Fotos POD → subida a **Amazon S3** vía `AlmacenamientoArchivoPort`.
-
 ---
 
 ## Technical Context
@@ -660,9 +655,6 @@ PLAN-00 Sprint 0 (Fundación hexagonal)
 ---
 
 ## Notes
-
-- **`IntegracionExternaService` eliminado.** Las interfaces `IntegracionModulo1Port` e `IntegracionModulo3Port` viven en el dominio. Sus implementaciones SQS viven en `infrastructure/adapter/out/messaging/`. El `application` layer (servicios) solo conoce las interfaces, nunca los adaptadores SQS.
-- **`ConductorOperacionController`** (este plan) vs **`ConductorController`** (PLAN-03): son clases distintas. El primero usa `ROLE_DRIVER`, el segundo usa `ROLE_FLEET_ADMIN`. Esto resuelve el conflicto de nombres del diseño original.
 - **Soporte offline:** El backend recibe `fechaHoraAccion` del conductor. El frontend (Sprint 5) es responsable del almacenamiento local en IndexedDB y la cola de sincronización. El backend no distingue requests online vs offline — simplemente confía en `fechaHoraAccion`.
 - **Fotos POD:** El conductor primero sube la foto (`POST /foto`), recibe la URL de S3, luego envía el resultado de la parada con esa URL. No se envían fotos en multipart junto al resultado (evita timeouts en conexiones lentas de campo).
 - El payload de `RutaCerradaEvent` debe seguir **exactamente** la estructura de SPEC-08 sección 4. El `modelo_contrato` del conductor es requerido — fue agregado en PLAN-03.

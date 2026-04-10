@@ -14,9 +14,6 @@
 ## Summary
 
 Este plan agrupa tres SPECs que comparten las mismas entidades (`Vehiculo`, `Conductor`) y son gestionadas por el mismo actor (Administrador de Flota). Cubre: registro, actualización y baja de vehículos (placa única, bloqueo si en tránsito); asignación y desvinculación de conductores con historial de asignaciones; y consulta en tiempo real del panel de disponibilidad.
-
-> **Cambio respecto al plan original:** La estructura de paquetes es hexagonal (ver PLAN-00). `Vehiculo` y `Conductor` son entidades de dominio puras (POJO) además de tener sus entidades JPA correspondientes. Los servicios implementan puertos de entrada.
-
 ---
 
 ## Technical Context
@@ -413,6 +410,6 @@ PLAN-00 Sprint 0 (Fundación hexagonal — entidades JPA de Vehiculo y Conductor
 ## Notes
 
 - Ejecutar este plan **antes** de PLAN-01. Sin vehículos en BD, el algoritmo de consolidación no puede asignar `tipoVehiculoRequerido`.  
-- `modelo_contrato` es el campo que faltaba en los planes originales. Es crítico para SPEC-08 (payload `RUTA_CERRADA` al Módulo 3).
-- `ConductorController` aquí es **solo gestión admin** (PLAN-03). Las operaciones de campo del conductor están en `ConductorOperacionController` en PLAN-04 — esto resuelve el conflicto de nombres del diseño anterior.
+- `modelo_contrato` Es crítico para SPEC-08 (payload `RUTA_CERRADA` al Módulo 3).
+- `ConductorController` aquí es **solo gestión admin** (PLAN-03). Las operaciones de campo del conductor están en `ConductorOperacionController` en PLAN-04.
 - El campo `disponibleParaPlanificacion` en `FlotaDisponibilidadResponse` es calculado en tiempo de query, no almacenado en BD.
