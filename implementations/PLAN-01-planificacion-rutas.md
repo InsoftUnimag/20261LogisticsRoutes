@@ -1,13 +1,15 @@
 # Implementation Plan: Planificación Automática de Rutas (MOD2-UC-001)
 
-**Date:** 2026-04-06
+**Date:** 2026-04-09 (actualizado)
 **Spec:** [SPEC-01-planificacion-rutas.md](../specs/SPEC-01-planificacion-rutas.md)
+**Arquitectura:** Ver [PLAN-00-arquitectura-master.md](./PLAN-00-arquitectura-master.md)
+**Orden de ejecución:** Sprint 2 — depende de PLAN-00 (Sprint 0) y PLAN-03 (Sprint 1)
 
 ---
 
 ## Summary
 
-El sistema recibe eventos `SOLICITAR_RUTA` del Módulo 1 (SGP) cuando un paquete alcanza estado `recibido_en_sede`. Agrupa paquetes por zona geográfica (radio 5 km), asigna el tipo de vehículo de menor capacidad disponible, recalcula y escala el tipo de vehículo al superar el 90% de capacidad, transiciona rutas a `lista_para_despacho` por capacidad o por vencimiento de plazo (5 días), y notifica al Despachador Logístico. La comunicación con Módulo 1 es asíncrona.
+El sistema recibe eventos `SOLICITAR_RUTA` del Módulo 1 (SGP) cuando un paquete alcanza estado `recibido_en_sede`. Agrupa paquetes por zona geográfica usando **geohash de precisión 5** (~4.9 km), asigna el tipo de vehículo de menor capacidad disponible, recalcula y escala el tipo de vehículo al superar el 90% de capacidad, transiciona rutas a `LISTA_PARA_DESPACHO` por capacidad o por vencimiento de plazo (5 días), y notifica al Despachador Logístico. La comunicación con Módulo 1 es asíncrona vía **SQS**.
 
 ---
 
@@ -15,176 +17,357 @@ El sistema recibe eventos `SOLICITAR_RUTA` del Módulo 1 (SGP) cuando un paquete
 
 | Campo | Valor |
 |---|---|
-| **Language/Version** | Java 17 |
+| **Language/Version** | Java 21 |
 | **Framework** | Spring Boot 3.x |
-| **Primary Dependencies** | Spring Web, Spring Data JPA, Spring Scheduler, PostgreSQL Driver, Lombok |
+| **Arquitectura** | Hexagonal (Ports & Adapters) — ver PLAN-00 |
+| **Primary Dependencies** | Spring Web, Spring Data JPA, Spring Security, PostgreSQL, Flyway, geohash-java, ShedLock |
 | **Storage** | PostgreSQL |
+| **Mensajería** | Amazon SQS (Spring Cloud AWS) — reemplaza endpoint REST para producción |
 | **Testing** | JUnit 5, Mockito, Testcontainers (PostgreSQL) |
-| **Target Platform** | Linux server / Backend REST API |
-| **Performance Goals** | Retornar `ruta_id` al SGP en < 2 segundos; transición a `lista_para_despacho` notificada en < 5 segundos |
-| **Constraints** | Sin duplicados de ruta por zona en estado `CREADA` (control de concurrencia); descartar solicitudes con `fecha_limite_entrega` vencida |
-| **Scale/Scope** | Módulo 2 del sistema logístico — endpoint y scheduler de planificación de rutas |
+| **Performance Goals** | Retornar `ruta_id` al SGP en < 2 seg; transición a `LISTA_PARA_DESPACHO` notificada en < 5 seg |
+| **Constraints** | Una sola ruta `CREADA` por zona — garantizado por `UNIQUE INDEX PARTIAL` en BD, no por locks de aplicación |
 
 ---
 
 ## Project Structure
 
+> Se usa la estructura hexagonal definida en PLAN-00. Los archivos de este plan identifican dónde va cada clase.
+
 ```
-src/
-├── main/
-│   └── java/com/logistics/routes/
-│       ├── model/
-│       │   ├── Ruta.java
-│       │   └── TipoVehiculo.java
-│       ├── repository/
-│       │   └── RutaRepository.java
-│       ├── service/
-│       │   ├── PlanificacionService.java
-│       │   └── NotificacionService.java
-│       ├── scheduler/
-│       │   └── FechaLimiteScheduler.java
-│       ├── controller/
-│       │   └── PlanificacionController.java
-│       └── dto/
-│           ├── SolicitarRutaRequest.java
-│           └── SolicitarRutaResponse.java
-└── test/
-    └── java/com/logistics/routes/
-        ├── service/
-        │   └── PlanificacionServiceTest.java
-        └── integration/
-            └── PlanificacionIntegrationTest.java
+domain/
+├── enums/
+│   ├── EstadoRuta.java             [existente — PLAN-00]
+│   └── TipoVehiculo.java           [existente — PLAN-00, con siguienteTipo() y capacidadKg()]
+├── model/
+│   └── Ruta.java                   [existente — PLAN-00]
+├── valueobject/
+│   └── ZonaGeografica.java         [existente — PLAN-00]
+├── exception/
+│   └── FechaLimiteVencidaException.java [existente — PLAN-00]
+└── port/
+    ├── in/
+    │   └── PlanificacionRouteUseCase.java [existente — PLAN-00]
+    └── out/
+        ├── RutaRepositoryPort.java         [existente — PLAN-00]
+        └── NotificacionDespachadorPort.java [existente — PLAN-00]
+
+application/
+└── planificacion/
+    └── PlanificacionService.java   [NUEVO — implementa PlanificacionRouteUseCase]
+
+infrastructure/
+├── adapter/
+│   ├── in/
+│   │   ├── web/
+│   │   │   └── PlanificacionController.java  [NUEVO]
+│   │   └── messaging/
+│   │       └── SolicitarRutaConsumer.java    [NUEVO — listener SQS]
+│   └── out/
+│       └── persistence/
+│           └── RutaJpaAdapter.java           [existente — PLAN-00, se extiende]
+├── scheduler/
+│   └── FechaLimiteDespachoScheduler.java    [NUEVO]
+└── dto/
+    ├── request/
+    │   └── SolicitarRutaRequest.java        [NUEVO]
+    └── response/
+        └── SolicitarRutaResponse.java       [NUEVO]
 ```
 
-**Structure Decision:** Proyecto single backend (Spring Boot). El frontend del despachador es parte de un plan separado (PLAN-02). Esta estructura expone un endpoint REST para recibir el evento del Módulo 1 y un scheduler para el chequeo de fechas límite.
+---
+
+## Phase 1: Prerequisitos (verificación)
+
+> **Dependencia bloqueante:** PLAN-00 Sprint 0 debe estar completo antes de comenzar.
+
+- [ ] T101 Verificar que `ZonaGeografica`, `TipoVehiculo` (con `siguienteTipo()` y `capacidadKg()`), `EstadoRuta` compilan en `domain/`
+- [ ] T102 Verificar que `RutaEntity` tiene el unique index parcial `idx_rutas_zona_creada` en BD (confirmar con `\d rutas` en psql)
+- [ ] T103 Verificar que `RutaRepositoryPort` y `NotificacionDespachadorPort` están definidas en `domain/port/out/`
+- [ ] T104 Verificar que vehículos y conductores existen en BD (PLAN-03 Sprint 1 completo)
 
 ---
 
-## Phase 1: Setup (Infraestructura compartida)
+## Phase 2: Dominio de Planificación — Lógica del algoritmo de consolidación
 
-**Purpose:** Inicialización y configuración base del proyecto Spring Boot.
+**Purpose:** La lógica de negocio vive en el dominio y en el servicio de aplicación. Sin dependencias de Spring.
 
-- [ ] T001 Crear proyecto Spring Boot con dependencias: `spring-boot-starter-web`, `spring-boot-starter-data-jpa`, `postgresql`, `lombok`, `spring-boot-starter-test`
-- [ ] T002 Configurar `application.properties` con conexión a PostgreSQL (datasource, Hibernate DDL)
-- [ ] T003 Crear esquema inicial de base de datos (script SQL o Flyway migration `V1__init.sql`)
-- [ ] T004 Configurar Lombok y verificar compilación exitosa del proyecto vacío
+⚠️ **CRÍTICO: Nada del algoritmo de consolidación puede tener un import de Spring.**
 
----
+### Tests del algoritmo (TDD puro)
 
-## Phase 2: Foundational — Modelos y Repositorios (Prerequisito bloqueante)
+- [ ] T105 [P] Test unitario `TipoVehiculoTest`:
+  - `MOTO.siguienteTipo()` → `VAN`
+  - `VAN.siguienteTipo()` → `NHR`
+  - `NHR.siguienteTipo()` → `TURBO`
+  - `TURBO.siguienteTipo()` → `Optional.empty()`
+  - `MOTO.capacidadKg()` → `20.0`
+  - `TURBO.capacidadKg()` → `4500.0`
 
-**Purpose:** Entidades de dominio y acceso a datos. Nada puede implementarse sin esto.
+- [ ] T106 [P] Test unitario `ZonaGeograficaTest`:
+  - `ZonaGeografica.from(lat, lon)` retorna geohash de exactamente 5 caracteres
+  - Dos coordenadas separadas < 5 km retornan el mismo geohash
+  - Dos coordenadas separadas > 10 km retornan distinto geohash
 
-⚠️ **CRÍTICO: Ninguna historia de usuario puede iniciarse hasta completar esta fase.**
+### Implementación del dominio
 
-- [ ] T005 [P] Crear enum `EstadoRuta` con valores: `CREADA`, `LISTA_PARA_DESPACHO`, `CONFIRMADA`, `EN_TRANSITO`, `CERRADA_MANUAL`, `CERRADA_AUTOMATICA`, `CERRADA_FORZADA`
-- [ ] T006 [P] Crear enum `TipoVehiculo` con valores y capacidades: `MOTO(20)`, `VAN(500)`, `NHR(2000)`, `TURBO(4500)` — incluir método `siguiente()` para escalado
-- [ ] T007 [P] Crear entidad `Ruta` en `model/Ruta.java` con todos los atributos de KEY-ENTITIES: `id` (UUID), `zona` (String), `estado` (EstadoRuta), `pesoAcumuladoKg` (float), `tipoVehiculoRequerido` (TipoVehiculo), `fechaCreacionRuta` (LocalDateTime), `fechaLimiteDespacho` (LocalDateTime), `paradas` (lista de IDs UUID)
-- [ ] T008 [P] Crear `RutaRepository` extendiendo `JpaRepository<Ruta, UUID>` con query: `findByZonaAndEstado(String zona, EstadoRuta estado)`
-- [ ] T009 [P] Crear DTOs: `SolicitarRutaRequest` (campos del evento SOLICITAR_RUTA del SPEC-08) y `SolicitarRutaResponse` con `ruta_id`
+- [ ] T107 [P] En `TipoVehiculo` enum: agregar método `Optional<TipoVehiculo> siguienteTipo()` y `double capacidadKg()`
 
-**Checkpoint: Base de datos y modelos listos. Se puede iniciar implementación de User Stories.**
+```java
+public enum TipoVehiculo {
+    MOTO(20.0), VAN(500.0), NHR(2000.0), TURBO(4500.0);
 
----
+    private final double capacidadKg;
 
-## Phase 3: User Story 1 — Planificar y Asignar Rutas (Priority: P1)
+    TipoVehiculo(double capacidadKg) { this.capacidadKg = capacidadKg; }
 
-**Goal:** Recibir el evento `SOLICITAR_RUTA`, agrupar el paquete en una ruta por zona, escalar el tipo de vehículo si es necesario y retornar `ruta_id`.
+    public double capacidadKg() { return capacidadKg; }
 
-**Independent Test:** Enviar `POST /api/planificacion/solicitar-ruta` con un payload válido y verificar que se retorna un `ruta_id` y la ruta existe en la BD con el estado y tipo de vehículo correctos.
+    public Optional<TipoVehiculo> siguienteTipo() {
+        TipoVehiculo[] values = values();
+        int next = ordinal() + 1;
+        return next < values.length ? Optional.of(values[next]) : Optional.empty();
+    }
 
-### Tests para User Story 1
-- [ ] T010 [P] [US1] Test unitario: `PlanificacionServiceTest` — escenario "paquete asignado a ruta existente con zona coincidente"
-- [ ] T011 [P] [US1] Test unitario: `PlanificacionServiceTest` — escenario "creación de nueva ruta cuando no existe ruta CREADA en la zona"
-- [ ] T012 [P] [US1] Test unitario: `PlanificacionServiceTest` — escenario "escalar tipo de vehículo al superar 90% de capacidad"
-- [ ] T013 [P] [US1] Test unitario: `PlanificacionServiceTest` — escenario "ruta pasa a LISTA_PARA_DESPACHO al superar 90% de capacidad del Turbo"
-- [ ] T014 [US1] Test de integración: `PlanificacionIntegrationTest` — flujo completo con BD PostgreSQL en Testcontainers
+    public boolean porcentajeExcede(double pesoAcumulado, double umbral) {
+        return (pesoAcumulado / capacidadKg) * 100 >= umbral;
+    }
+}
+```
 
-### Implementación para User Story 1
-- [ ] T015 [P] [US1] Implementar `PlanificacionService.asignarRuta(SolicitarRutaRequest)`:
-  - Validar que `fecha_limite_entrega` no esté vencida; si venció, descartar y notificar al Despachador
-  - Buscar ruta en estado `CREADA` para la misma zona (radio 5 km)
-  - Si existe: agregar `paquete_id` a la ruta, sumar `peso_kg`, recalcular porcentaje de capacidad
-  - Si no existe: crear nueva ruta con `tipoVehiculoRequerido = MOTO`, calcular `fechaLimiteDespacho = now() + 5 días`
-  - Si el peso acumulado ≥ 90% de la capacidad del tipo actual:
-    - Si existe tipo siguiente: escalar `tipoVehiculoRequerido` al siguiente
-    - Si ya es TURBO: transicionar a `LISTA_PARA_DESPACHO` y llamar `NotificacionService.notificarDespachador(ruta)`
-  - Retornar `ruta_id`
-- [ ] T016 [US1] Implementar `PlanificacionController.solicitarRuta()` — `POST /api/planificacion/solicitar-ruta`
-- [ ] T017 [US1] Agregar control de concurrencia en la creación de ruta por zona (`@Lock` o `SELECT FOR UPDATE` en repository) para evitar rutas duplicadas por zona
-- [ ] T018 [US1] Implementar stub de `NotificacionService.notificarDespachador(Ruta ruta)` — log estructurado como placeholder
-- [ ] T019 [US1] Agregar manejo de errores: `@ControllerAdvice` con respuestas 400/422 para solicitudes inválidas
+- [ ] T108 [P] En `ZonaGeografica` value object: usar `com.github.davidmoten:geo` o `ch.hsr:geohash`
 
-**Checkpoint: US1 completamente funcional. El SGP puede enviar solicitudes y recibir `ruta_id`.**
+```java
+public record ZonaGeografica(String geohash) {
+    private static final int PRECISION = 5;
 
----
-
-## Phase 4: User Story 4 (Scheduler) — Transición automática por fecha límite (Priority: P1)
-
-**Goal:** Detectar rutas en estado `CREADA` que alcanzaron su `fechaLimiteDespacho` y transicionarlas automáticamente a `LISTA_PARA_DESPACHO`.
-
-**Independent Test:** Crear una ruta con `fechaLimiteDespacho` en el pasado, ejecutar el scheduler manualmente y verificar que la ruta transicionó a `LISTA_PARA_DESPACHO` y se notificó al Despachador con indicación de "vencimiento de plazo".
-
-### Tests para el Scheduler
-- [ ] T020 [P] [US1] Test unitario: `FechaLimiteSchedulerTest` — verifica que rutas con `fechaLimiteDespacho` vencida se transicionan correctamente
-- [ ] T021 [US1] Test unitario: verifica que el mensaje de notificación al Despachador incluye "vencimiento de plazo"
-
-### Implementación del Scheduler
-- [ ] T022 [P] [US1] Agregar query en `RutaRepository`: `findByEstadoAndFechaLimiteDespachoLessThanEqual(EstadoRuta estado, LocalDateTime fecha)`
-- [ ] T023 [US1] Implementar `FechaLimiteScheduler` con `@Scheduled(fixedRate = 60000)`:
-  - Consultar rutas en estado `CREADA` con `fechaLimiteDespacho <= now()`
-  - Transicionar cada una a `LISTA_PARA_DESPACHO`
-  - Notificar al Despachador con motivo "vencimiento de plazo"
-- [ ] T024 [US1] Habilitar scheduling en la aplicación con `@EnableScheduling`
-
-**Checkpoint: Las rutas transicionan automáticamente por plazo vencido sin intervención manual.**
+    public static ZonaGeografica from(double latitud, double longitud) {
+        return new ZonaGeografica(
+            GeoHash.geoHashStringWithCharacterPrecision(latitud, longitud, PRECISION)
+        );
+    }
+}
+```
 
 ---
 
-## Phase 5: User Story 5 — Despacho manual anticipado (Priority: P1)
+## Phase 3: Servicio de Aplicación — PlanificacionService (US1)
 
-**Goal:** Permitir al Despachador transicionar manualmente una ruta de `CREADA` a `LISTA_PARA_DESPACHO`.
+**Goal:** Recibir el comando `SolicitarRuta`, aplicar el algoritmo de consolidación y retornar `ruta_id`.
 
-**Independent Test:** Llamar `POST /api/planificacion/rutas/{id}/despacho-manual` sobre una ruta en estado `CREADA` y verificar que pasa a `LISTA_PARA_DESPACHO`.
+**Independent Test:** Instanciar `PlanificacionService` con mocks de los puertos de salida, enviar un `SolicitarRutaCommand` válido y verificar que retorna un UUID y que el puerto `RutaRepositoryPort.guardar()` fue llamado con los atributos correctos.
 
-### Tests para US5
-- [ ] T025 [P] [US1] Test unitario: `PlanificacionServiceTest` — despacho manual exitoso
-- [ ] T026 [US1] Test unitario: intento de despacho manual sobre ruta en estado distinto a `CREADA` retorna error
+### Tests del servicio (TDD)
 
-### Implementación de US5
-- [ ] T027 [US1] Implementar `PlanificacionService.despachoManual(UUID rutaId)`
-- [ ] T028 [US1] Implementar `PlanificacionController.despachoManual()` — `POST /api/planificacion/rutas/{id}/despacho-manual`
+- [ ] T109 [P] [US1] `PlanificacionServiceTest` — paquete asignado a ruta `CREADA` existente en zona coincidente:
+  - Dado: existe ruta `CREADA` con `zona = "d29ej"` y `pesoAcumulado = 5.0 kg` (tipo MOTO, capacidad 20 kg)
+  - Cuando: llega paquete con `peso = 5.0 kg` y coordenadas que resultan en zona `"d29ej"`
+  - Entonces: `RutaRepositoryPort.guardar()` con `pesoAcumulado = 10.0 kg`, retorna el mismo `ruta_id`
 
-**Checkpoint: Todas las historias de US1 son funcionales y testables independientemente.**
+- [ ] T110 [P] [US1] `PlanificacionServiceTest` — sin ruta `CREADA` en zona → crea nueva ruta:
+  - Dado: ninguna ruta `CREADA` para la zona calculada
+  - Cuando: llega solicitud con `peso = 3.0 kg`, `latitud/longitud` del paquete
+  - Entonces: `RutaRepositoryPort.guardar()` con estado `CREADA`, `tipoVehiculo = MOTO`, `fechaLimiteDespacho = now() + 5 días`
+
+- [ ] T111 [P] [US1] `PlanificacionServiceTest` — escalar tipo de vehículo al superar 90%:
+  - Dado: ruta `CREADA` con `pesoAcumulado = 17.0 kg`, tipo `MOTO` (capacidad 20 kg → 90% = 18 kg)
+  - Cuando: llega paquete con `peso = 1.5 kg` → total `18.5 kg` → supera 90%
+  - Entonces: `tipoVehiculoRequerido` escala a `VAN`. Ruta continúa en estado `CREADA`.
+
+- [ ] T112 [P] [US1] `PlanificacionServiceTest` — ruta pasa a `LISTA_PARA_DESPACHO` al superar 90% de TURBO:
+  - Dado: ruta `CREADA` con `pesoAcumulado = 4050.0 kg`, tipo `TURBO` (4500 kg → 90% = 4050 kg)
+  - Cuando: llega paquete con `peso = 1.0 kg` → total `4051.0 kg` → supera 90%
+  - Entonces: ruta transiciona a `LISTA_PARA_DESPACHO`. `NotificacionDespachadorPort.notificarRutaListaParaDespacho()` llamado.
+
+- [ ] T113 [P] [US1] `PlanificacionServiceTest` — `fecha_limite_entrega` vencida → descarta solicitud:
+  - Dado: paquete con `fechaLimiteEntrega` en el pasado
+  - Entonces: lanza `FechaLimiteVencidaException`. No se crea ni modifica ninguna ruta. `NotificacionDespachadorPort.notificarAlertaPrioritaria()` llamado.
+
+- [ ] T114 [US1] `PlanificacionServiceTest` — despacho manual anticipado:
+  - Dado: ruta en estado `CREADA` con al menos un paquete
+  - Cuando: `PlanificacionService.despacharManual(rutaId)`
+  - Entonces: ruta transiciona a `LISTA_PARA_DESPACHO`
+
+### Implementación del servicio
+
+- [ ] T115 [P] [US1] Implementar `PlanificacionService implements PlanificacionRouteUseCase`:
+
+```java
+// application/planificacion/PlanificacionService.java
+@Service
+@Transactional
+public class PlanificacionService implements PlanificacionRouteUseCase {
+
+    private final RutaRepositoryPort rutaRepository;
+    private final NotificacionDespachadorPort notificacion;
+    private static final double UMBRAL_CAPACIDAD = 90.0;
+    private static final int PLAZO_DESPACHO_DIAS = 5;
+
+    // Inyección por constructor (no @Autowired en campo)
+    public PlanificacionService(RutaRepositoryPort rutaRepository,
+                                NotificacionDespachadorPort notificacion) {
+        this.rutaRepository = rutaRepository;
+        this.notificacion   = notificacion;
+    }
+
+    @Override
+    public UUID solicitarRuta(SolicitarRutaCommand command) {
+        validarFechaLimite(command.fechaLimiteEntrega());
+
+        ZonaGeografica zona = ZonaGeografica.from(command.latitud(), command.longitud());
+        Ruta ruta = rutaRepository
+            .buscarRutaActivaPorZona(zona)           // busca estado CREADA
+            .orElseGet(() -> crearNuevaRuta(zona));
+
+        ruta.agregarPaquete(command.paqueteId(), command.pesoKg());
+        evaluarEscaladoOTransicion(ruta);
+
+        return rutaRepository.guardar(ruta).id();
+    }
+
+    private void evaluarEscaladoOTransicion(Ruta ruta) {
+        TipoVehiculo tipoActual = ruta.tipoVehiculoRequerido();
+        if (tipoActual.porcentajeExcede(ruta.pesoAcumuladoKg(), UMBRAL_CAPACIDAD)) {
+            tipoActual.siguienteTipo().ifPresentOrElse(
+                ruta::setTipoVehiculoRequerido,
+                () -> transicionarAListaParaDespacho(ruta, "capacidad_maxima_alcanzada")
+            );
+        }
+    }
+
+    // ... resto de métodos
+}
+```
+
+- [ ] T116 [US1] Implementar `RutaRepositoryPort.buscarRutaActivaPorZona(ZonaGeografica zona)`:
+  - En `RutaJpaRepository`: `Optional<RutaEntity> findByZonaAndEstado(String zona, EstadoRuta estado)`
+  - En `RutaJpaAdapter`: mapear `ZonaGeografica.geohash()` → `String` para la query
+
+- [ ] T117 [US1] **Concurrencia:** El `UNIQUE INDEX PARTIAL` en BD maneja el caso de dos hilos creando ruta en la misma zona simultáneamente. El adaptador JPA debe capturar `DataIntegrityViolationException` y hacer retry consultando la ruta que ya fue creada por el otro hilo:
+
+```java
+// infrastructure/adapter/out/persistence/RutaJpaAdapter.java
+public Optional<Ruta> buscarRutaActivaPorZona(ZonaGeografica zona) {
+    return rutaJpaRepository
+        .findByZonaAndEstado(zona.geohash(), EstadoRuta.CREADA)
+        .map(rutaMapper::toDomain);
+}
+
+// En PlanificacionService, al guardar ruta nueva:
+// Si DataIntegrityViolationException → consultar la ruta creada por el otro hilo → agregarle el paquete
+```
+
+- [ ] T118 [US1] Implementar `PlanificacionService.despacharManual(UUID rutaId)`
+- [ ] T119 [US1] Implementar `PlanificacionService.transicionarRutasVencidas()` — consulta `RutaRepositoryPort.buscarRutasVencidas()` y transiciona cada una a `LISTA_PARA_DESPACHO` con motivo `"vencimiento_plazo"`
 
 ---
 
-## Phase N: Polish y Concerns Transversales
+## Phase 4: Adaptadores de Entrada
 
-- [ ] T029 Documentar endpoints con Javadoc y comentarios de contrato
-- [ ] T030 Revisar y ajustar logs estructurados (nivel INFO para eventos clave, ERROR para excepciones)
-- [ ] T031 Agregar validaciones de entrada con `@Valid` y Bean Validation en los DTOs
-- [ ] T032 Configurar gestión de variables de entorno sensibles (URL de BD, credenciales) vía `application.properties` con perfil `dev`/`prod`
+### Adaptador REST (para pruebas y Módulo 1 si no usa SQS)
+
+- [ ] T120 [US1] Implementar `PlanificacionController`:
+  - `POST /api/planificacion/solicitar-ruta` — requiere `ROLE_SYSTEM`
+  - `POST /api/planificacion/rutas/{id}/despacho-manual` — requiere `ROLE_DISPATCHER`
+  - `GET /api/planificacion/rutas` — listar rutas activas (`ROLE_DISPATCHER`)
+
+```java
+@RestController
+@RequestMapping("/api/planificacion")
+@RequiredArgsConstructor
+public class PlanificacionController {
+
+    private final PlanificacionRouteUseCase planificacion; // ← puerto, no servicio concreto
+
+    @PostMapping("/solicitar-ruta")
+    @PreAuthorize("hasRole('SYSTEM')")
+    @ResponseStatus(HttpStatus.OK)
+    public SolicitarRutaResponse solicitarRuta(@Valid @RequestBody SolicitarRutaRequest request) {
+        UUID rutaId = planificacion.solicitarRuta(request.toCommand());
+        return new SolicitarRutaResponse(rutaId);
+    }
+}
+```
+
+### Adaptador SQS (producción)
+
+- [ ] T121 [US1] Implementar `SolicitarRutaConsumer`:
+
+```java
+// infrastructure/adapter/in/messaging/SolicitarRutaConsumer.java
+@Component
+@RequiredArgsConstructor
+public class SolicitarRutaConsumer {
+
+    private final PlanificacionRouteUseCase planificacion;
+    private final ObjectMapper objectMapper;
+
+    @SqsListener("${aws.sqs.solicitudes-ruta-queue}")
+    public void onSolicitarRuta(String payload) {
+        SolicitarRutaEvent event = objectMapper.readValue(payload, SolicitarRutaEvent.class);
+        planificacion.solicitarRuta(event.toCommand());
+    }
+}
+```
+
+---
+
+## Phase 5: Scheduler — Transición por fecha límite
+
+- [ ] T122 [P] [US1] Implementar `FechaLimiteDespachoScheduler`:
+
+```java
+@Component
+@RequiredArgsConstructor
+public class FechaLimiteDespachoScheduler {
+
+    private final PlanificacionRouteUseCase planificacion;
+
+    // Cada 5 minutos — no fixedRate para evitar solapamiento si la ejecución tarda
+    @Scheduled(cron = "0 */5 * * * *")
+    @SchedulerLock(name = "fecha-limite-despacho", lockAtMostFor = "4m", lockAtLeastFor = "1m")
+    public void transicionarRutasVencidas() {
+        planificacion.transicionarRutasVencidas();
+    }
+}
+```
+
+- [ ] T123 [US1] Agregar query en `RutaJpaRepository`:
+  ```java
+  List<RutaEntity> findByEstadoAndFechaLimiteDespachoLessThanEqual(EstadoRuta estado, LocalDateTime fecha);
+  ```
+- [ ] T124 [US1] Habilitar `@EnableScheduling` y configurar `ShedLock` con Redis en `AwsSqsConfig`
+
+**Checkpoint: El SGP puede enviar solicitudes vía SQS o REST. Las rutas se crean y escalan correctamente. El scheduler transiciona rutas vencidas.**
+
+---
+
+## Phase N: Polish
+
+- [ ] T125 Documentar endpoints con `@Operation`, `@ApiResponse` de OpenAPI
+- [ ] T126 Validaciones `@Valid` + Bean Validation en `SolicitarRutaRequest` (lat/lon obligatorios, peso > 0)
+- [ ] T127 Test de integración `PlanificacionIntegrationTest` con Testcontainers + PostgreSQL
+  - Flujo: solicitar ruta → verificar creación en BD → solicitar segunda ruta en misma zona → verificar que es la misma ruta con peso sumado
+  - Edge case de concurrencia: dos hilos crean ruta en la misma zona simultáneamente → una sola ruta creada
 
 ---
 
 ## Dependencies & Execution Order
 
 ```
-Phase 1 (Setup)
-    └── Phase 2 (Foundational — BLOQUEA todo)
-            ├── Phase 3 (US1: Asignación de rutas) — P1
-            ├── Phase 4 (Scheduler: fecha límite)  — depende de Phase 3
-            └── Phase 5 (Despacho manual)           — puede ir en paralelo con Phase 3
-
-Phase N (Polish) — después de todas las fases anteriores
+PLAN-00 Sprint 0 (Fundación — estructura hexagonal, BD, dominio puro)
+    └── PLAN-03 Sprint 1 (Vehículos y Conductores en BD)
+            └── Este plan — Sprint 2
+                    ├── Phase 2 (Dominio: TipoVehiculo, ZonaGeografica)
+                    ├── Phase 3 (PlanificacionService — TDD primero)
+                    ├── Phase 4 (Adaptadores de entrada)
+                    └── Phase 5 (Scheduler con ShedLock)
 ```
 
 ---
 
 ## Notes
 
-- El campo `zona` en `Ruta` representa la zona geográfica agrupada por radio de 5 km. La estrategia de cálculo de zona (e.g., geohash o cluster por coordenadas) debe definirse antes de T015.
-- `NotificacionService` es un stub en este plan; se conectará al canal real de notificación (WebSocket, email, etc.) en un plan posterior.
-- Verificar tests y hacer commit al terminar cada tarea o grupo lógico.
-- Detener en cada Checkpoint para validar de forma independiente.
+- **Geohash precisión 5:** Las celdas son ~4.9 × 4.9 km, compatible con `radio_zona_km = 5` del KEY-ENTITIES. Confirmar con el equipo si Módulo 1 enviará siempre lat/lon (el Módulo 2 calcula el geohash) o si puede enviar el geohash precalculado.
+- **Concurrencia sin locks de aplicación:** El `UNIQUE INDEX PARTIAL` en BD es el control de concurrencia. Evitar `SELECT FOR UPDATE` o `@Lock(LockModeType.PESSIMISTIC_WRITE)` — generan deadlocks bajo carga alta.
+- **`NotificacionDespachadorPort`** es un stub de log en Sprint 2. Se conectará a WebSocket real en Sprint 5 (Frontend).
+- Verificar tests y hacer commit al terminar cada tarea o grupo lógico según el checkpoint.

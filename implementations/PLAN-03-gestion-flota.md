@@ -1,16 +1,21 @@
 # Implementation Plan: Gestión de Vehículos y Conductores (MOD2-UC-003 / MOD2-UC-004 / MOD2-UC-005)
 
-**Date:** 2026-04-06
+**Date:** 2026-04-09 (actualizado)
 **Specs:**
 - [SPEC-03-gestion-vehiculos.md](../specs/SPEC-03-gestion-vehiculos.md)
 - [SPEC-04-asignacion-conductores.md](../specs/SPEC-04-asignacion-conductores.md)
 - [SPEC-05-disponibilidad-flota.md](../specs/SPEC-05-disponibilidad-flota.md)
 
+**Arquitectura:** Ver [PLAN-00-arquitectura-master.md](./PLAN-00-arquitectura-master.md)
+**Orden de ejecución:** Sprint 1 — depende solo de PLAN-00 (Sprint 0). Es **prerequisito** de PLAN-01 y PLAN-02.
+
 ---
 
 ## Summary
 
-Este plan agrupa tres SPECs que comparten las mismas entidades (`Vehiculo`, `Conductor`) y son gestionadas por el mismo actor (Administrador de Flota). Cubre: registro, actualización y baja de vehículos con validaciones (placa única, bloqueo si en tránsito); asignación y desvinculación de conductores a vehículos con historial de asignaciones; y consulta en tiempo real del panel de disponibilidad de la flota.
+Este plan agrupa tres SPECs que comparten las mismas entidades (`Vehiculo`, `Conductor`) y son gestionadas por el mismo actor (Administrador de Flota). Cubre: registro, actualización y baja de vehículos (placa única, bloqueo si en tránsito); asignación y desvinculación de conductores con historial de asignaciones; y consulta en tiempo real del panel de disponibilidad.
+
+> **Cambio respecto al plan original:** La estructura de paquetes es hexagonal (ver PLAN-00). `Vehiculo` y `Conductor` son entidades de dominio puras (POJO) además de tener sus entidades JPA correspondientes. Los servicios implementan puertos de entrada.
 
 ---
 
@@ -18,203 +23,396 @@ Este plan agrupa tres SPECs que comparten las mismas entidades (`Vehiculo`, `Con
 
 | Campo | Valor |
 |---|---|
-| **Language/Version** | Java 17 |
+| **Language/Version** | Java 21 |
 | **Framework** | Spring Boot 3.x |
-| **Primary Dependencies** | Spring Web, Spring Data JPA, PostgreSQL Driver, Lombok |
+| **Arquitectura** | Hexagonal (Ports & Adapters) — ver PLAN-00 |
+| **Primary Dependencies** | Spring Web, Spring Data JPA, Spring Security, PostgreSQL, Lombok |
 | **Storage** | PostgreSQL |
 | **Testing** | JUnit 5, Mockito, Testcontainers (PostgreSQL) |
-| **Target Platform** | Linux server / Backend REST API |
-| **Performance Goals** | Vehículo registrado visible al algoritmo en < 2 minutos. Panel de flota actualizado en tiempo real con cada cambio de estado. |
-| **Constraints** | Placa única. Bloqueo de modificación/baja en vehículos con rutas activas. Conductor no puede estar en más de un vehículo activo simultáneamente. |
-| **Scale/Scope** | Módulo 2 — CRUD de flota + panel de disponibilidad |
+| **Performance Goals** | Vehículo registrado visible al algoritmo en < 2 min. Panel actualizado en tiempo real. |
+| **Constraints** | Placa única. Bloqueo de modificación/baja en vehículos con rutas activas. Conductor no puede estar en más de un vehículo activo. |
 
 ---
 
 ## Project Structure
 
-> Este plan extiende la estructura de PLAN-01 y PLAN-02. Los modelos `Vehiculo` y `Conductor` ya fueron creados en PLAN-02 Phase 2. Aquí se construyen los endpoints y servicios de administración.
-
 ```
-src/
-├── main/
-│   └── java/com/logistics/routes/
-│       ├── model/
-│       │   ├── Vehiculo.java              (ya existe — PLAN-02)
-│       │   ├── Conductor.java             (ya existe — PLAN-02)
-│       │   └── HistorialAsignacion.java   [NUEVO]
-│       ├── repository/
-│       │   ├── VehiculoRepository.java    (ya existe — se extiende)
-│       │   ├── ConductorRepository.java   (ya existe — se extiende)
-│       │   └── HistorialAsignacionRepository.java [NUEVO]
-│       ├── service/
-│       │   ├── VehiculoService.java       [NUEVO]
-│       │   └── ConductorService.java      [NUEVO]
-│       ├── controller/
-│       │   ├── VehiculoController.java    [NUEVO]
-│       │   └── ConductorController.java   [NUEVO]
-│       └── dto/
-│           ├── VehiculoRequest.java       [NUEVO]
-│           ├── VehiculoResponse.java      [NUEVO]
-│           ├── ConductorRequest.java      [NUEVO]
-│           ├── AsignacionRequest.java     [NUEVO]
-│           └── FlotaDisponibilidadResponse.java [NUEVO]
-└── test/
-    └── java/com/logistics/routes/
-        ├── service/
-        │   ├── VehiculoServiceTest.java   [NUEVO]
-        │   └── ConductorServiceTest.java  [NUEVO]
-        └── integration/
-            └── FlotaIntegrationTest.java  [NUEVO]
+domain/
+├── model/
+│   ├── Vehiculo.java                       [existente — PLAN-00] ← añadir modelo_contrato a Conductor
+│   ├── Conductor.java                      [existente — PLAN-00]
+│   └── HistorialAsignacion.java            [NUEVO en dominio]
+├── enums/
+│   ├── EstadoVehiculo.java                 [existente — PLAN-00]
+│   └── EstadoConductor.java                [existente — PLAN-00]
+├── exception/
+│   ├── PlacaDuplicadaException.java        [existente — PLAN-00]
+│   ├── VehiculoEnTransitoException.java    [existente — PLAN-00]
+│   └── ConductorYaAsignadoException.java   [existente — PLAN-00]
+└── port/
+    ├── in/
+    │   ├── GestionFlotaUseCase.java         [existente — PLAN-00]
+    │   └── GestionConductoresUseCase.java   [existente — PLAN-00]
+    └── out/
+        ├── VehiculoRepositoryPort.java      [existente — PLAN-00]
+        ├── ConductorRepositoryPort.java     [existente — PLAN-00]
+        ├── HistorialAsignacionRepositoryPort.java [NUEVO]
+        └── NotificacionDespachadorPort.java [existente — PLAN-00]
+
+application/
+└── flota/
+    ├── VehiculoService.java                [NUEVO — implementa GestionFlotaUseCase]
+    └── ConductorService.java               [NUEVO — implementa GestionConductoresUseCase]
+
+infrastructure/
+├── adapter/
+│   ├── in/web/
+│   │   ├── VehiculoController.java         [NUEVO]
+│   │   └── ConductorController.java        [NUEVO — solo gestión admin de flota]
+│   └── out/persistence/
+│       ├── VehiculoJpaAdapter.java         [existente — PLAN-00, se extiende]
+│       ├── ConductorJpaAdapter.java        [existente — PLAN-00, se extiende]
+│       └── HistorialAsignacionJpaAdapter.java [NUEVO]
+├── persistence/
+│   ├── entity/
+│   │   └── HistorialAsignacionEntity.java  [NUEVO]
+│   └── repository/
+│       └── HistorialAsignacionJpaRepository.java [NUEVO]
+└── dto/
+    ├── request/
+    │   ├── VehiculoRequest.java            [NUEVO]
+    │   ├── ConductorRequest.java           [NUEVO]
+    │   └── AsignacionRequest.java          [NUEVO]
+    └── response/
+        ├── VehiculoResponse.java           [NUEVO]
+        └── FlotaDisponibilidadResponse.java [NUEVO]
 ```
 
-**Structure Decision:** Se extiende el mismo proyecto Spring Boot. Las entidades `Vehiculo` y `Conductor` ya existen en PLAN-02; aquí se agregan los servicios y endpoints de administración completos.
+> **Nota:** `ConductorController` aquí solo cubre la gestión ADMIN (CRUD, asignación de vehículo). Las operaciones de campo del conductor (consultar ruta, iniciar tránsito, registrar parada) están en `ConductorOperacionController` — definido en PLAN-04.
 
 ---
 
-## Phase 1: Setup
+## Phase 1: Prerequisitos
 
-> **Dependencia:** PLAN-01 Phase 1 y PLAN-02 Phase 2 (entidades `Vehiculo` y `Conductor`) deben estar completas.
-
-- [ ] T001 Verificar que `Vehiculo`, `Conductor`, `EstadoVehiculo`, `EstadoConductor` compilan y tienen tablas en PostgreSQL
+- [ ] T301 Verificar que `VehiculoEntity`, `ConductorEntity`, `VehiculoJpaAdapter`, `ConductorJpaAdapter` compilan desde PLAN-00
+- [ ] T302 Verificar que `EstadoVehiculo`, `EstadoConductor`, `TipoVehiculo` están en `domain/enums/`
 
 ---
 
-## Phase 2: Foundational — Historial de Asignaciones
+## Phase 2: Dominio — Historial de Asignaciones y modelo_contrato
 
-**Purpose:** Entidad `HistorialAsignacion` necesaria para auditoría de asignaciones conductor-vehículo (FR-012). Bloquea las historias de asignación de conductores.
+**Purpose:** Completar el modelo de dominio con los atributos faltantes identificados en el diagnóstico.
 
-- [ ] T002 [P] Crear entidad `HistorialAsignacion` en `model/HistorialAsignacion.java`: `id` (UUID), `conductorId` (UUID), `vehiculoId` (UUID), `fechaHoraInicio` (LocalDateTime), `fechaHoraFin` (LocalDateTime, nullable)
-- [ ] T003 [P] Crear `HistorialAsignacionRepository` con query: `findByConductorIdAndFechaHoraFinIsNull(UUID conductorId)` para verificar asignación activa
-- [ ] T004 [P] Crear DTOs: `VehiculoRequest`, `VehiculoResponse`, `ConductorRequest`, `AsignacionRequest`, `FlotaDisponibilidadResponse`
+- [ ] T303 [P] Agregar `modeloContrato` a la entidad `Conductor` en `domain/model/Conductor.java`:
+  ```java
+  // Enum en domain/enums/ModeloContrato.java
+  public enum ModeloContrato {
+      RECORRIDO_COMPLETO, POR_PARADA
+  }
+  // En Conductor: campo modeloContrato (ModeloContrato) — requerido por SPEC-08 payload RUTA_CERRADA
+  ```
+  
+  > **¿Por qué aquí?** SPEC-08 (sección 4) requiere `modelo_contrato` en el evento `RUTA_CERRADA`. Sin este campo, el Módulo 3 no puede calcular la liquidación.
 
-**Checkpoint: Historial de asignaciones listo. Se puede iniciar implementación de las historias de flota.**
+- [ ] T304 [P] Agregar `modeloContrato` a `ConductorEntity` y a la migración Flyway `V3__add_modelo_contrato.sql`:
+  ```sql
+  CREATE TYPE modelo_contrato AS ENUM ('RECORRIDO_COMPLETO', 'POR_PARADA');
+  ALTER TABLE conductores ADD COLUMN modelo_contrato modelo_contrato NOT NULL DEFAULT 'POR_PARADA';
+  ```
+
+- [ ] T305 [P] Crear entidad de dominio `HistorialAsignacion` en `domain/model/HistorialAsignacion.java`:
+  ```java
+  public class HistorialAsignacion {
+      private UUID id;
+      private UUID conductorId;
+      private UUID vehiculoId;
+      private Instant fechaHoraInicio;
+      private Instant fechaHoraFin; // null = asignación activa
+  }
+  ```
+
+- [ ] T306 [P] Crear `HistorialAsignacionRepositoryPort`:
+  ```java
+  interface HistorialAsignacionRepositoryPort {
+      void registrarInicio(UUID conductorId, UUID vehiculoId);
+      void registrarFin(UUID conductorId);
+      Optional<HistorialAsignacion> buscarAsignacionActiva(UUID conductorId);
+      List<HistorialAsignacion> buscarHistorialPorConductor(UUID conductorId);
+  }
+  ```
+
+- [ ] T307 [P] Crear `HistorialAsignacionEntity`, `HistorialAsignacionJpaRepository` e implementar `HistorialAsignacionJpaAdapter`
+
+**Checkpoint: Dominio de flota completo incluyendo `modelo_contrato` en Conductor e historial de asignaciones.**
 
 ---
 
 ## Phase 3: User Story 3 — Gestión de Vehículos (Priority: P1)
 
-**Goal:** El Administrador puede registrar, actualizar y dar de baja vehículos. El sistema valida placa única y bloquea cambios en vehículos con rutas activas.
+**Goal:** Administrador puede registrar, actualizar y dar de baja vehículos con validaciones.
 
-**Independent Test:** Registrar un vehículo nuevo, verificar que aparece en `GET /api/vehiculos` con estado `DISPONIBLE`. Intentar registrar con la misma placa → error. Intentar dar de baja un vehículo en estado `EN_TRANSITO` → error.
+**Independent Test:** `POST /api/vehiculos` con datos válidos → 201 con `id`. Segundo `POST` con misma placa → 409. `DELETE /api/vehiculos/{id}` de vehículo `EN_TRANSITO` → 409.
 
-### Tests para US3
-- [ ] T005 [P] [US3] Test unitario: `VehiculoServiceTest` — registro exitoso de vehículo nuevo
-- [ ] T006 [P] [US3] Test unitario: registro bloqueado por placa duplicada
-- [ ] T007 [P] [US3] Test unitario: actualización bloqueada si vehículo está `EN_TRANSITO`
-- [ ] T008 [P] [US3] Test unitario: baja exitosa de vehículo `DISPONIBLE` sin rutas activas
-- [ ] T009 [US3] Test unitario: baja bloqueada de vehículo con estado `EN_TRANSITO`
-- [ ] T010 [US3] Test unitario: recálculo de capacidad alerta al Despachador si hay sobrepeso tras actualizar capacidad
-- [ ] T011 [US3] Test de integración: `FlotaIntegrationTest` — CRUD completo de vehículo
+### Tests (TDD)
 
-### Implementación para US3
-- [ ] T012 [P] [US3] Implementar `VehiculoService.registrar(VehiculoRequest)`:
-  - Validar que no exista vehículo con la misma placa → lanzar excepción con mensaje
-  - Validar que `capacidadPesoKg > 0` → lanzar excepción con mensaje
-  - Crear vehículo con estado `DISPONIBLE`
-  - Retornar `VehiculoResponse` con `id` generado
-- [ ] T013 [US3] Implementar `VehiculoService.actualizar(UUID id, VehiculoRequest)`:
-  - Verificar que el vehículo no esté `EN_TRANSITO` → bloquear con mensaje
-  - Actualizar atributos; si cambia `capacidadPesoKg`, recalcular rutas pendientes → notificar Despachador si sobrepeso
-- [ ] T014 [US3] Implementar `VehiculoService.darDeBaja(UUID id)`:
-  - Verificar estado no `EN_TRANSITO` y sin rutas en `LISTA_PARA_DESPACHO` o `CONFIRMADA` → bloquear con mensaje
-  - Cambiar estado a `INACTIVO`
-- [ ] T015 [US3] Implementar `VehiculoController` con endpoints:
-  - `POST /api/vehiculos` — registrar
-  - `GET /api/vehiculos` — listar todos
-  - `GET /api/vehiculos/{id}` — detalle
-  - `PUT /api/vehiculos/{id}` — actualizar
-  - `DELETE /api/vehiculos/{id}` — dar de baja
+- [ ] T308 [P] [US3] `VehiculoServiceTest` — registro exitoso:
+  - Dado: `VehiculoRequest` con placa nueva y `capacidadPesoKg > 0`
+  - Cuando: `VehiculoService.registrar(command)`
+  - Entonces: `VehiculoRepositoryPort.guardar()` llamado con estado `DISPONIBLE`. Retorna `VehiculoResponse` con UUID.
 
-**Checkpoint: CRUD de vehículos funcional con todas las validaciones.**
+- [ ] T309 [P] [US3] `VehiculoServiceTest` — registro bloqueado por placa duplicada:
+  - `VehiculoRepositoryPort.existePorPlaca("ABC123")` → `true`
+  - Entonces: lanza `PlacaDuplicadaException`. No llama a `guardar()`.
+
+- [ ] T310 [P] [US3] `VehiculoServiceTest` — actualización bloqueada si `EN_TRANSITO`:
+  - Vehículo con estado `EN_TRANSITO`
+  - Entonces: lanza `VehiculoEnTransitoException`.
+
+- [ ] T311 [P] [US3] `VehiculoServiceTest` — baja exitosa de vehículo `DISPONIBLE`:
+  - Vehículo sin rutas activas → estado cambia a `INACTIVO`
+
+- [ ] T312 [US3] `VehiculoServiceTest` — baja bloqueada si `EN_TRANSITO`
+
+- [ ] T313 [US3] `VehiculoServiceTest` — capacidad ≤ 0 → excepción de validación
+
+### Implementación
+
+- [ ] T314 [P] [US3] Implementar `VehiculoService implements GestionFlotaUseCase`:
+
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class VehiculoService implements GestionFlotaUseCase {
+
+    private final VehiculoRepositoryPort vehiculoRepository;
+    private final NotificacionDespachadorPort notificacion;
+
+    @Override
+    public Vehiculo registrar(RegistrarVehiculoCommand command) {
+        if (vehiculoRepository.existePorPlaca(command.placa())) {
+            throw new PlacaDuplicadaException(command.placa());
+        }
+        Vehiculo vehiculo = Vehiculo.nuevo(command); // factory method en la entidad de dominio
+        return vehiculoRepository.guardar(vehiculo);
+    }
+
+    @Override
+    public void darDeBaja(UUID id) {
+        Vehiculo vehiculo = vehiculoRepository.buscarPorId(id)
+            .orElseThrow(() -> new RutaNoEncontradaException(id));
+        if (vehiculo.estado() == EstadoVehiculo.EN_TRANSITO) {
+            throw new VehiculoEnTransitoException(id);
+        }
+        vehiculo.marcarInactivo();
+        vehiculoRepository.guardar(vehiculo);
+    }
+    // ...
+}
+```
+
+- [ ] T315 [US3] Extender `VehiculoRepositoryPort` con:
+  - `boolean existePorPlaca(String placa)`
+  - `List<Vehiculo> buscarTodos()`
+
+- [ ] T316 [US3] Implementar `VehiculoController`:
+
+```java
+@RestController
+@RequestMapping("/api/vehiculos")
+@PreAuthorize("hasRole('FLEET_ADMIN')")
+@RequiredArgsConstructor
+public class VehiculoController {
+
+    private final GestionFlotaUseCase flota; // ← depende del puerto, no del servicio
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public VehiculoResponse registrar(@Valid @RequestBody VehiculoRequest request) { ... }
+
+    @GetMapping
+    public List<VehiculoResponse> listar() { ... }
+
+    @GetMapping("/{id}")
+    public VehiculoResponse detalle(@PathVariable UUID id) { ... }
+
+    @PutMapping("/{id}")
+    public VehiculoResponse actualizar(@PathVariable UUID id,
+                                       @Valid @RequestBody VehiculoRequest request) { ... }
+
+    @DeleteMapping("/{id}")
+    public void darDeBaja(@PathVariable UUID id) { ... }
+}
+```
+
+**Checkpoint: CRUD de vehículos funcional con todas las validaciones. Vehículo registrado disponible para el algoritmo.**
 
 ---
 
-## Phase 4: User Story 4 — Asignación de Conductores a Vehículos (Priority: P2)
+## Phase 4: User Story 4 — Asignación de Conductores (Priority: P2)
 
-**Goal:** El Administrador asigna y desvincula conductores a vehículos. El sistema impide que un conductor esté en más de un vehículo activo y registra historial con fecha y hora.
+**Goal:** Administrador asigna y desvincula conductores a vehículos con historial y validaciones.
 
-**Independent Test:** Registrar conductor y vehículo, asignar, verificar que ambos se actualizan. Intentar asignar el mismo conductor a un segundo vehículo → error. Intentar reasignar conductor en vehículo `EN_TRANSITO` → error.
+**Independent Test:** `POST /api/conductores/{id}/asignar-vehiculo` con vehículo `DISPONIBLE` y conductor `ACTIVO` sin vehículo → 200. Segundo intento de asignar el mismo conductor → 409.
 
-### Tests para US4
-- [ ] T016 [P] [US4] Test unitario: `ConductorServiceTest` — asignación exitosa conductor-vehículo
-- [ ] T017 [P] [US4] Test unitario: asignación bloqueada si conductor ya tiene vehículo activo
-- [ ] T018 [P] [US4] Test unitario: reasignación bloqueada si vehículo está `EN_TRANSITO`
-- [ ] T019 [US4] Test unitario: desvinculación exitosa registra `fechaHoraFin` en historial
-- [ ] T020 [US4] Test unitario: alerta de alta prioridad al Despachador si conductor en `EN_RUTA` cambia a `INACTIVO`
-- [ ] T021 [US4] Test de integración: flujo completo asignación/desvinculación con historial
+### Tests (TDD)
 
-### Implementación para US4
-- [ ] T022 [P] [US4] Implementar `ConductorService.registrar(ConductorRequest)` — crear conductor con estado `ACTIVO`
-- [ ] T023 [P] [US4] Implementar `ConductorService.asignar(UUID conductorId, AsignacionRequest vehiculoId)`:
-  - Verificar conductor en estado `ACTIVO` y sin vehículo activo → error si ya tiene
-  - Verificar vehículo en estado `DISPONIBLE` y no `EN_TRANSITO` → error si bloqueado
-  - Crear registro `HistorialAsignacion` con `fechaHoraInicio = now()`
-  - Actualizar `conductorId` en `Vehiculo` y `vehiculoAsignadoId` en `Conductor`
-- [ ] T024 [US4] Implementar `ConductorService.desvincular(UUID conductorId)`:
-  - Verificar que el vehículo asociado no esté `EN_TRANSITO` → bloquear con mensaje
-  - Cerrar registro `HistorialAsignacion` con `fechaHoraFin = now()`
-  - Limpiar `conductorId` del vehículo → vehículo queda excluido del algoritmo de planificación
-- [ ] T025 [US4] Implementar `ConductorService.darDeBaja(UUID conductorId)`:
-  - Si conductor está `EN_RUTA`: enviar alerta de alta prioridad al Despachador
-  - Cambiar estado a `INACTIVO`
-- [ ] T026 [US4] Implementar `ConductorController` con endpoints:
-  - `POST /api/conductores` — registrar
-  - `GET /api/conductores` — listar
-  - `POST /api/conductores/{id}/asignar` — asignar vehículo
-  - `DELETE /api/conductores/{id}/desvincular` — quitar vehículo
-  - `GET /api/conductores/{id}/historial` — consultar historial de asignaciones
+- [ ] T317 [P] [US4] `ConductorServiceTest` — asignación exitosa:
+  - Dado: conductor `ACTIVO` sin vehículo, vehículo `DISPONIBLE`
+  - Cuando: `ConductorService.asignarVehiculo(conductorId, vehiculoId)`
+  - Entonces: `HistorialAsignacionRepositoryPort.registrarInicio()` llamado. `conductor.vehiculoAsignadoId` actualizado. `vehiculo.conductorId` actualizado.
 
-**Checkpoint: Asignaciones conductor-vehículo funcionan correctamente con historial y validaciones.**
+- [ ] T318 [P] [US4] `ConductorServiceTest` — asignación bloqueada si conductor ya tiene vehículo:
+  - `HistorialAsignacionRepositoryPort.buscarAsignacionActiva(conductorId)` retorna asignación existente
+  - Entonces: lanza `ConductorYaAsignadoException`
+
+- [ ] T319 [P] [US4] `ConductorServiceTest` — reasignación bloqueada si vehículo `EN_TRANSITO`
+
+- [ ] T320 [US4] `ConductorServiceTest` — desvinculación exitosa:
+  - Cuando: `ConductorService.desvincularVehiculo(conductorId)`
+  - Entonces: `HistorialAsignacionRepositoryPort.registrarFin()` llamado. `vehiculo.conductorId` = null. Vehículo queda excluido del algoritmo de planificación (calculado: `disponibleParaPlanificacion = estado==DISPONIBLE && conductorId != null`).
+
+- [ ] T321 [US4] `ConductorServiceTest` — baja de conductor `EN_RUTA` → alerta al Despachador:
+  - `NotificacionDespachadorPort.notificarAlertaPrioritaria()` llamado antes de cambiar estado
+
+### Implementación
+
+- [ ] T322 [P] [US4] Implementar `ConductorService implements GestionConductoresUseCase`:
+
+```java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class ConductorService implements GestionConductoresUseCase {
+
+    private final ConductorRepositoryPort conductorRepository;
+    private final VehiculoRepositoryPort vehiculoRepository;
+    private final HistorialAsignacionRepositoryPort historialRepository;
+    private final NotificacionDespachadorPort notificacion;
+
+    @Override
+    public void asignarVehiculo(UUID conductorId, UUID vehiculoId) {
+        Conductor conductor = conductorRepository.buscarPorId(conductorId)
+            .orElseThrow(() -> new RutaNoEncontradaException(conductorId));
+        Vehiculo vehiculo = vehiculoRepository.buscarPorId(vehiculoId)
+            .orElseThrow(() -> new RutaNoEncontradaException(vehiculoId));
+
+        historialRepository.buscarAsignacionActiva(conductorId)
+            .ifPresent(a -> { throw new ConductorYaAsignadoException(conductorId); });
+
+        if (vehiculo.estado() == EstadoVehiculo.EN_TRANSITO) {
+            throw new VehiculoEnTransitoException(vehiculoId);
+        }
+
+        conductor.asignarVehiculo(vehiculoId);
+        vehiculo.asignarConductor(conductorId);
+        historialRepository.registrarInicio(conductorId, vehiculoId);
+
+        conductorRepository.guardar(conductor);
+        vehiculoRepository.guardar(vehiculo);
+    }
+
+    @Override
+    public void darDeBaja(UUID conductorId) {
+        Conductor conductor = conductorRepository.buscarPorId(conductorId)
+            .orElseThrow(() -> new RutaNoEncontradaException(conductorId));
+
+        if (conductor.estado() == EstadoConductor.EN_RUTA) {
+            notificacion.notificarAlertaPrioritaria(
+                "Conductor " + conductor.nombre() + " dado de baja mientras está EN_RUTA"
+            );
+        }
+        conductor.marcarInactivo();
+        conductorRepository.guardar(conductor);
+    }
+    // ...
+}
+```
+
+- [ ] T323 [US4] Implementar `ConductorController` (gestión admin — no incluir endpoints de operación de campo):
+
+```java
+@RestController
+@RequestMapping("/api/conductores")
+@PreAuthorize("hasRole('FLEET_ADMIN')")
+@RequiredArgsConstructor
+public class ConductorController {
+
+    private final GestionConductoresUseCase conductores;
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ConductorResponse registrar(@Valid @RequestBody ConductorRequest request) { ... }
+
+    @GetMapping
+    public List<ConductorResponse> listar() { ... }
+
+    @PostMapping("/{id}/asignar-vehiculo")
+    public void asignarVehiculo(@PathVariable UUID id,
+                                @Valid @RequestBody AsignacionRequest request) { ... }
+
+    @DeleteMapping("/{id}/desvincular-vehiculo")
+    public void desvincularVehiculo(@PathVariable UUID id) { ... }
+
+    @PutMapping("/{id}/estado")
+    public void cambiarEstado(@PathVariable UUID id, @RequestParam EstadoConductor estado) { ... }
+
+    @GetMapping("/{id}/historial-asignaciones")
+    public List<HistorialAsignacionResponse> historial(@PathVariable UUID id) { ... }
+}
+```
+
+**Checkpoint: Asignaciones conductor-vehículo funcionan con historial y validaciones.**
 
 ---
 
-## Phase 5: User Story 5 — Panel de Disponibilidad de Flota (Priority: P2)
+## Phase 5: User Story 5 — Panel de Disponibilidad (Priority: P2)
 
-**Goal:** El Administrador consulta en tiempo real el estado de todos los vehículos, diferenciando los disponibles con y sin conductor.
+- [ ] T324 [US5] `VehiculoServiceTest` — `consultarDisponibilidad()` retorna `disponibleParaPlanificacion = true` solo si estado `DISPONIBLE` Y `conductorId != null`
 
-**Independent Test:** Llamar `GET /api/flota/disponibilidad` y verificar que cada vehículo muestra su estado, conductor asignado (o null), zona de operación y se diferencian visualmente los disponibles sin conductor.
+- [ ] T325 [US5] Implementar `VehiculoService.consultarDisponibilidad()`:
+  ```java
+  // Campo calculado — no almacenado en BD
+  boolean disponibleParaPlanificacion = vehiculo.estado() == EstadoVehiculo.DISPONIBLE
+      && vehiculo.conductorId() != null;
+  ```
 
-### Tests para US5
-- [ ] T027 [US5] Test unitario: panel retorna todos los vehículos con su estado y conductor
-- [ ] T028 [US5] Test unitario: vehículo `DISPONIBLE` sin conductor se diferencia en la respuesta (`conductorAsignado: null`)
-- [ ] T029 [US5] Test unitario: panel muestra estado `DISPONIBLE` / `EN_TRANSITO` / `INACTIVO` correctamente
+- [ ] T326 [US5] Agregar endpoint en `VehiculoController`:
+  ```java
+  @GetMapping("/disponibilidad")    // accesible también para ROLE_DISPATCHER
+  @PreAuthorize("hasAnyRole('FLEET_ADMIN', 'DISPATCHER')")
+  public List<FlotaDisponibilidadResponse> disponibilidad() { ... }
+  ```
 
-### Implementación para US5
-- [ ] T030 [US5] Implementar `VehiculoService.consultarDisponibilidad()` — retorna lista de `FlotaDisponibilidadResponse` con: `vehiculoId`, `placa`, `tipo`, `estado`, `zonaOperacion`, `conductorAsignado` (null si no tiene), `disponibleParaPlanificacion` (true si estado=`DISPONIBLE` y tiene conductor)
-- [ ] T031 [US5] Implementar `VehiculoController.disponibilidad()` — `GET /api/flota/disponibilidad`
-
-**Checkpoint: El Administrador puede ver la flota completa en tiempo real desde un solo endpoint.**
+**Checkpoint: Admin y Despachador pueden ver la flota completa y distinguir vehículos disponibles sin conductor.**
 
 ---
 
-## Phase N: Polish y Concerns Transversales
+## Phase N: Polish
 
-- [ ] T032 Documentar todos los endpoints con Javadoc
-- [ ] T033 Revisar logs estructurados para auditoría de cambios de estado de flota
-- [ ] T034 Agregar validaciones `@Valid` en todos los DTOs de request
-- [ ] T035 Revisar respuestas HTTP: 201 en creación, 404 en no encontrado, 409 en conflictos de negocio, 422 en validaciones
+- [ ] T327 Documentar todos los endpoints con `@Operation`, `@ApiResponse` de OpenAPI
+- [ ] T328 Validaciones `@Valid` en `VehiculoRequest` (placa no nula, capacidad > 0) y `ConductorRequest`
+- [ ] T329 Respuestas HTTP: 201 en creación, 404 en no encontrado, 409 en conflictos de negocio, 422 en validaciones
+- [ ] T330 Test de integración `FlotaIntegrationTest` con Testcontainers: CRUD completo de vehículo + asignación/desvinculación de conductor con historial
 
 ---
 
 ## Dependencies & Execution Order
 
 ```
-PLAN-01 Phase 1 + Phase 2 (modelos Ruta, TipoVehiculo)
-PLAN-02 Phase 2 (entidades Vehiculo, Conductor)
-    └── Este plan — Phase 1 (verificación)
-            └── Phase 2 (Foundational HistorialAsignacion — BLOQUEA US4)
-                    ├── Phase 3 (US3: CRUD Vehículos) — P1, independiente
-                    ├── Phase 4 (US4: Asignación Conductores) — P2, depende de Phase 3
-                    └── Phase 5 (US5: Panel Disponibilidad) — P2, depende de Phase 3 y 4
-
-Phase N (Polish) — al final
+PLAN-00 Sprint 0 (Fundación hexagonal — entidades JPA de Vehiculo y Conductor ya estarán)
+    └── Este plan — Sprint 1 (primer sprint de negocio — prerequisito de los demás)
+            ├── Phase 2 (Historial + modelo_contrato — BLOQUEA US4)
+            ├── Phase 3 (US3: CRUD Vehículos) ← P1, comenzar aquí
+            ├── Phase 4 (US4: Asignación Conductores) ← P2
+            └── Phase 5 (US5: Panel Disponibilidad) ← P2
 ```
 
 ---
 
 ## Notes
 
-- US3 y US4 comparten entidades pero sus servicios son independientes y pueden ir en paralelo si hay dos developers disponibles.
-- El campo `disponibleParaPlanificacion` en `FlotaDisponibilidadResponse` es calculado (no almacenado): `estado == DISPONIBLE && conductorId != null`.
-- La alerta al Despachador cuando un conductor pasa a `INACTIVO` estando `EN_RUTA` es un stub de `NotificacionService` aquí; se conectará al canal real más adelante.
-- Verificar tests y hacer commit al terminar cada tarea o grupo lógico.
+- Ejecutar este plan **antes** de PLAN-01. Sin vehículos en BD, el algoritmo de consolidación no puede asignar `tipoVehiculoRequerido`.  
+- `modelo_contrato` es el campo que faltaba en los planes originales. Es crítico para SPEC-08 (payload `RUTA_CERRADA` al Módulo 3).
+- `ConductorController` aquí es **solo gestión admin** (PLAN-03). Las operaciones de campo del conductor están en `ConductorOperacionController` en PLAN-04 — esto resuelve el conflicto de nombres del diseño anterior.
+- El campo `disponibleParaPlanificacion` en `FlotaDisponibilidadResponse` es calculado en tiempo de query, no almacenado en BD.
