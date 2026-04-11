@@ -82,7 +82,7 @@ infrastructure/
 
 - [ ] T101 Verificar que `ZonaGeografica`, `TipoVehiculo` (con `siguienteTipo()` y `capacidadKg()`), `EstadoRuta` compilan en `domain/`
 - [ ] T102 Verificar que `RutaEntity` tiene el unique index parcial `idx_rutas_zona_creada` en BD (confirmar con `\d rutas` en psql)
-- [ ] T103 Verificar que `RutaRepositoryPort` y `NotificacionDespachadorPort` están definidas en `domain/port/out/`
+- [ ] T103 Verificar que `RutaRepositoryPort` y `NotificacionDespachadorPort` están definidas en `application/port/out/`
 - [ ] T104 Verificar que vehículos y conductores existen en BD (PLAN-03 Sprint 1 completo)
 
 ---

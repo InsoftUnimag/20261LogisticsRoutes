@@ -66,7 +66,7 @@ infrastructure/
 
 - [ ] T201 Verificar que existen rutas en estado `LISTA_PARA_DESPACHO` en BD
 - [ ] T202 Verificar que `VehiculoRepositoryPort` y `ConductorRepositoryPort` tienen métodos para buscar por estado
-- [ ] T203 Verificar que `DespachoRouteUseCase` está definida en `domain/port/in/`
+- [ ] T203 Verificar que `DespachoRouteUseCase` está definida en `application/port/in/`
 
 ---
 

@@ -15,12 +15,13 @@ Las dependencias apuntan siempre **hacia adentro**. La regla es absoluta.
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  INFRASTRUCTURE (Adaptadores Web, JPA, SQS, S3)     │
+│  INFRASTRUCTURE (Adaptadores Web, JPA, SQS, S3)      │
 │  ┌────────────────────────────────────────────────┐  │
-│  │  APPLICATION (Servicios — casos de uso)        │  │
+│  │  APPLICATION (Puertos + Casos de uso)          │  │
 │  │  ┌──────────────────────────────────────────┐  │  │
-│  │  │  DOMAIN (Entidades + Puertos)            │  │  │
+│  │  │  DOMAIN (Entidades puras)                │  │  │
 │  │  │  Sin imports de Spring. POJO puro.       │  │  │
+│  │  │  Sin puertos. Solo lógica de negocio.    │  │  │
 │  │  └──────────────────────────────────────────┘  │  │
 │  └────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────┘
@@ -28,7 +29,9 @@ Las dependencias apuntan siempre **hacia adentro**. La regla es absoluta.
 
 **Regla:** `domain` no importa nada de `application` ni de `infrastructure`.  
 `application` importa `domain` pero nunca `infrastructure`.  
-`infrastructure` puede importar ambas.
+`infrastructure` puede importar ambas.  
+
+> **Nota arquitectónica:** Siguiendo el diagrama original de Cockburn, los **Ports** son la frontera del hexágono y pertenecen a la capa `application`. El `domain` contiene únicamente el modelo de negocio puro (entidades, value objects, enums, excepciones).
 
 ### 2. Estrategia de Zona Geográfica
 
@@ -53,8 +56,8 @@ El `UNIQUE INDEX PARTIAL` sobre `zona WHERE estado = 'CREADA'` resuelve la concu
 | Cola | Emisor | Receptor |
 |---|---|---|
 | `solicitudes-ruta-queue` | Módulo 1 (SGP) | Módulo 2 — `SolicitarRutaConsumer` |
-| `eventos-paquete-queue` | Módulo 2 | Módulo 1 (SGP) |
-| `cierre-ruta-queue` | Módulo 2 | Módulo 3 (Facturación) |
+| `eventos-paquete-queue`  | Módulo 2 | Módulo 1 (SGP) |
+| `cierre-ruta-queue`      | Módulo 2 | Módulo 3 (Facturación) |
 
 Reemplaza el `IntegracionExternaService` stub de PLAN-04 con adaptadores SQS reales.
 
@@ -100,54 +103,52 @@ src/main/java/com/logistics/routes/
 │   │   ├── MotivoNovedad.java
 │   │   ├── OrigenParada.java
 │   │   └── TipoCierre.java
-│   ├── exception/                       ← Sin mensajes HTTP. Solo de dominio.
-│   │   ├── RutaNoEncontradaException.java
-│   │   ├── VehiculoEnTransitoException.java
-│   │   ├── ConductorYaAsignadoException.java
-│   │   ├── FechaLimiteVencidaException.java
-│   │   ├── PlacaDuplicadaException.java
-│   │   └── ParadaSinPODException.java
-│   └── port/
-│       ├── in/                          ← Driving Ports (interfaces de casos de uso)
-│       │   ├── PlanificacionRouteUseCase.java
-│       │   ├── DespachoRouteUseCase.java
-│       │   ├── GestionFlotaUseCase.java
-│       │   ├── GestionConductoresUseCase.java
-│       │   └── OperacionCampoUseCase.java
-│       └── out/                         ← Driven Ports (interfaces de infraestructura)
-│           ├── RutaRepositoryPort.java
-│           ├── VehiculoRepositoryPort.java
-│           ├── ConductorRepositoryPort.java
-│           ├── ParadaRepositoryPort.java
-│           ├── HistorialAsignacionRepositoryPort.java
-│           ├── NotificacionDespachadorPort.java
-│           ├── IntegracionModulo1Port.java
-│           ├── IntegracionModulo3Port.java
-│           └── AlmacenamientoArchivoPort.java
+│   └── exception/                       ← Sin mensajes HTTP. Solo de dominio.
+│       ├── RutaNoEncontradaException.java
+│       ├── VehiculoEnTransitoException.java
+│       ├── ConductorYaAsignadoException.java
+│       ├── FechaLimiteVencidaException.java
+│       ├── PlacaDuplicadaException.java
+│       └── ParadaSinPODException.java
 │
-├── application/                         ← Implementan los puertos de entrada
-│   ├── planificacion/
-│   │   └── PlanificacionService.java    ← implements PlanificacionRouteUseCase
-│   ├── despacho/
-│   │   └── DespachoService.java         ← implements DespachoRouteUseCase
-│   ├── flota/
-│   │   ├── VehiculoService.java         ← implements GestionFlotaUseCase
-│   │   └── ConductorService.java        ← implements GestionConductoresUseCase
-│   └── campo/
-│       ├── ConductorOperacionService.java ← implements OperacionCampoUseCase
-│       └── CierreRutaService.java
+├── application/                         ← Implementaciones puras de negocio orientadas a Casos de Uso (SRP)
+│   ├── port/
+│   │   ├── in/                          ← Input Ports: Interfaces 1 a 1 con los casos de uso
+│   │   │   ├── SolicitarRutaPort.java
+│   │   │   ├── ProcesarRutasVencidasPort.java
+│   │   │   ├── ListarRutasParaDespachoPort.java
+│   │   │   ├── ConfirmarDespachoPort.java
+│   │   │   ├── RegistrarParadaPort.java
+│   │   │   └── ... (una interfaz por cada acción del sistema)
+│   │   └── out/                         ← Output Ports: Contratos de salida (repos, mensajería, etc.)
+│   │       ├── RutaRepositoryPort.java
+│   │       ├── VehiculoRepositoryPort.java
+│   │       ├── ConductorRepositoryPort.java
+│   │       ├── ParadaRepositoryPort.java
+│   │       ├── HistorialAsignacionRepositoryPort.java
+│   │       ├── NotificacionDespachadorPort.java
+│   │       ├── IntegracionModulo1Port.java
+│   │       ├── IntegracionModulo3Port.java
+│   │       └── AlmacenamientoArchivoPort.java
+│   └── usecase/                         ← Implementaciones (1 clase por acción con método ejecutar)
+│       ├── SolicitarRutaUseCase.java            ← implements SolicitarRutaPort
+│       ├── ProcesarRutasVencidasUseCase.java    ← implements ProcesarRutasVencidasPort
+│       ├── ListarRutasParaDespachoUseCase.java  ← implements ListarRutasParaDespachoPort
+│       ├── ConfirmarDespachoUseCase.java        ← implements ConfirmarDespachoPort
+│       ├── RegistrarParadaUseCase.java          ← implements RegistrarParadaPort
+│       └── ... (una clase por cada acción del sistema)
 │
 └── infrastructure/                      ← Implementan los puertos de salida
     ├── adapter/
     │   ├── in/
-    │   │   ├── web/                     ← Controllers REST
+    │   │   ├── web/                     ← Controllers REST (Inyectan distintos Input Ports)
     │   │   │   ├── PlanificacionController.java
     │   │   │   ├── DespachoController.java
     │   │   │   ├── VehiculoController.java
-    │   │   │   ├── ConductorController.java         ← gestión admin (PLAN-03)
-    │   │   │   └── ConductorOperacionController.java ← campo conductor (PLAN-04)
+    │   │   │   ├── ConductorController.java
+    │   │   │   └── ConductorOperacionController.java
     │   │   └── messaging/
-    │   │       └── SolicitarRutaConsumer.java        ← Listener SQS
+    │   │       └── SolicitarRutaConsumer.java        ← Listener SQS (Llama a SolicitarRutaPort)
     │   └── out/
     │       ├── persistence/             ← impl de *RepositoryPort con JPA
     │       │   ├── RutaJpaAdapter.java
@@ -330,45 +331,40 @@ CREATE INDEX idx_paradas_paquete ON paradas(paquete_id);
 ## Puertos: Definición de Interfaces Clave
 
 ```java
-// ─── DRIVING PORTS (domain/port/in) ─────────────────────────────────
+// ─── DRIVING PORTS (application/port/in) ───────────────────────────
+// Siguiendo el principio de Responsabilidad Única (SRP), cada interfaz define estrictamente 1 operación.
 
-interface PlanificacionRouteUseCase {
-    UUID solicitarRuta(SolicitarRutaCommand command);
-    void despacharManual(UUID rutaId);
-    void transicionarRutasVencidas(); // llamado por FechaLimiteDespachoScheduler
-}
+// Planificación
+interface SolicitarRutaPort { UUID ejecutar(SolicitarRutaCommand command); }
+interface ProcesarRutasVencidasPort { void ejecutar(); } // Scheduler
 
-interface DespachoRouteUseCase {
-    List<Ruta> listarRutasParaDespacho();
-    Ruta confirmarDespacho(UUID rutaId, ConfirmarDespachoCommand command);
-    void excluirPaquete(UUID rutaId, UUID paqueteId, String motivo);
-}
+// Despacho
+interface ListarRutasParaDespachoPort { List<Ruta> ejecutar(); }
+interface ConfirmarDespachoPort { Ruta ejecutar(UUID rutaId, ConfirmarDespachoCommand command); }
+interface ExcluirPaqueteRutaPort { void ejecutar(UUID rutaId, UUID paqueteId, String motivo); }
 
-interface GestionFlotaUseCase {
-    Vehiculo registrar(RegistrarVehiculoCommand command);
-    Vehiculo actualizar(UUID id, ActualizarVehiculoCommand command);
-    void darDeBaja(UUID id);
-    List<Vehiculo> consultarDisponibilidad();
-}
+// Gestión Flota - Vehículos
+interface RegistrarVehiculoPort { Vehiculo ejecutar(RegistrarVehiculoCommand command); }
+interface ActualizarVehiculoPort { Vehiculo ejecutar(UUID id, ActualizarVehiculoCommand command); }
+interface DarDeBajaVehiculoPort { void ejecutar(UUID id); }
+interface ConsultarDisponibilidadFlotaPort { List<Vehiculo> ejecutar(); }
 
-interface GestionConductoresUseCase {
-    Conductor registrar(RegistrarConductorCommand command);
-    void asignarVehiculo(UUID conductorId, UUID vehiculoId);
-    void desvincularVehiculo(UUID conductorId);
-    void darDeBaja(UUID conductorId);
-    List<HistorialAsignacion> consultarHistorial(UUID conductorId);
-}
+// Gestión Flota - Conductores
+interface RegistrarConductorPort { Conductor ejecutar(RegistrarConductorCommand command); }
+interface AsignarVehiculoConductorPort { void ejecutar(UUID conductorId, UUID vehiculoId); }
+interface DesvincularVehiculoConductorPort { void ejecutar(UUID conductorId); }
+interface DarDeBajaConductorPort { void ejecutar(UUID conductorId); }
+interface ConsultarHistorialConductorPort { List<HistorialAsignacion> ejecutar(UUID conductorId); }
 
-interface OperacionCampoUseCase {
-    RutaConductorView consultarRutaActiva(UUID conductorId);
-    void iniciarTransito(UUID rutaId, UUID conductorId);
-    void registrarResultadoParada(UUID rutaId, RegistrarParadaCommand command);
-    void cerrarRuta(UUID rutaId, boolean confirmarConPendientes);
-    void forzarCierre(UUID rutaId);
-    void cerrarRutasExcedidas(); // llamado por CierreAutomaticoScheduler
-}
+// Operación Campo
+interface ConsultarRutaActivaPort { RutaConductorView ejecutar(UUID conductorId); }
+interface IniciarTransitoPort { void ejecutar(UUID rutaId, UUID conductorId); }
+interface RegistrarParadaPort { void ejecutar(UUID rutaId, RegistrarParadaCommand command); }
+interface CerrarRutaManualPort { void ejecutar(UUID rutaId, boolean confirmarConPendientes); }
+interface ForzarCierreRutaPort { void ejecutar(UUID rutaId); }
+interface CerrarRutasExcedidasPort { void ejecutar(); } // Scheduler
 
-// ─── DRIVEN PORTS (domain/port/out) ─────────────────────────────────
+// ─── DRIVEN PORTS (application/port/out) ───────────────────────────
 
 interface IntegracionModulo1Port {
     void publishPaqueteEnTransito(UUID paqueteId, UUID rutaId, Instant fechaHoraEvento);
@@ -416,10 +412,14 @@ interface NotificacionDespachadorPort {
 - [ ] T007 Crear todos los enums de dominio (incluyendo `TipoVehiculo` con `siguienteTipo()` y `capacidadKg()`)
 - [ ] T008 Crear `ZonaGeografica` record inmutable con `GeoHash.geoHashStringWithCharacterPrecision(lat, lon, 5)`
 - [ ] T009 Crear entidades de dominio como POJOs (sin anotaciones JPA): `Ruta`, `Vehiculo`, `Conductor`, `Parada`, `HistorialAsignacion`
-- [ ] T010 Crear todas las interfaces de puertos (in/out) vacías pero compilables
-- [ ] T011 Crear jerarquía de excepciones de dominio
+- [ ] T010 Crear jerarquía de excepciones de dominio
 
-### F0.4 — Capa de persistencia
+### F0.4 — Capa de aplicación (puertos y casos de uso)
+- [ ] T011b Crear todas las interfaces simples de `application/port/in/` (`*Port` con 1 solo método)
+- [ ] T011c Crear todas las interfaces de `application/port/out/` (Repository y Integration ports) vacías pero compilables
+- [ ] T011d Crear las clases de implementación en `application/usecase/` indicando `implements [Action]Port`
+
+### F0.5 — Capa de persistencia
 - [ ] T012 Crear entidades JPA (`*Entity`) separadas de las entidades de dominio
 - [ ] T013 Crear interfaces `*JpaRepository extends JpaRepository`
 - [ ] T014 Crear adaptadores JPA: `*JpaAdapter implements *RepositoryPort` con mappers dominio ↔ entity

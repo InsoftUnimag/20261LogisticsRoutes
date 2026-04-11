@@ -93,7 +93,7 @@ infrastructure/
 ## Phase 1: Prerequisitos
 
 - [ ] T401 Verificar que existen rutas en estado `CONFIRMADA` con conductor y vehículo asignados (PLAN-02 completo)
-- [ ] T402 Verificar que `ParadaRepositoryPort`, `IntegracionModulo1Port`, `IntegracionModulo3Port`, `AlmacenamientoArchivoPort` están definidas en `domain/port/out/`
+- [ ] T402 Verificar que `ParadaRepositoryPort`, `IntegracionModulo1Port`, `IntegracionModulo3Port`, `AlmacenamientoArchivoPort` están definidas en `application/port/out/`
 - [ ] T403 Verificar configuración AWS (credenciales SQS + S3 en `application-dev.yml` / Secrets Manager en prod)
 
 ---
