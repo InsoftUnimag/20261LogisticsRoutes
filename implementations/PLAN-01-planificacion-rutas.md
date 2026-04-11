@@ -36,37 +36,38 @@ El sistema recibe eventos `SOLICITAR_RUTA` del Módulo 1 (SGP) cuando un paquete
 ```
 domain/
 ├── enums/
-│   ├── EstadoRuta.java             [existente — PLAN-00]
-│   └── TipoVehiculo.java           [existente — PLAN-00, con siguienteTipo() y capacidadKg()]
+│   ├── EstadoRuta.java                    [existente — PLAN-00]
+│   └── TipoVehiculo.java                  [existente — PLAN-00, con siguienteTipo() y capacidadKg()]
 ├── model/
-│   └── Ruta.java                   [existente — PLAN-00]
+│   └── Ruta.java                          [existente — PLAN-00]
 ├── valueobject/
-│   └── ZonaGeografica.java         [existente — PLAN-00]
-├── exception/
-│   └── FechaLimiteVencidaException.java [existente — PLAN-00]
-└── port/
-    ├── in/
-    │   └── PlanificacionRouteUseCase.java [existente — PLAN-00]
-    └── out/
-        ├── RutaRepositoryPort.java         [existente — PLAN-00]
-        └── NotificacionDespachadorPort.java [existente — PLAN-00]
+│   └── ZonaGeografica.java                [existente — PLAN-00]
+└── exception/
+    └── FechaLimiteVencidaException.java   [existente — PLAN-00]
 
 application/
-└── planificacion/
-    └── PlanificacionService.java   [NUEVO — implementa PlanificacionRouteUseCase]
+├── port/
+│   └── in/
+│       ├── SolicitarRutaPort.java         [existente — PLAN-00]
+│       ├── DespacharManualPort.java       [existente — PLAN-00]
+│       └── ProcesarRutasVencidasPort.java [existente — PLAN-00]
+└── usecase/
+    ├── SolicitarRutaUseCase.java          [NUEVO — implements SolicitarRutaPort]
+    ├── DespacharManualUseCase.java        [NUEVO — implements DespacharManualPort]
+    └── ProcesarRutasVencidasUseCase.java  [NUEVO — implements ProcesarRutasVencidasPort]
 
 infrastructure/
 ├── adapter/
 │   ├── in/
 │   │   ├── web/
-│   │   │   └── PlanificacionController.java  [NUEVO]
+│   │   │   └── PlanificacionController.java  [NUEVO — inyecta los 3 puertos individuales]
 │   │   └── messaging/
-│   │       └── SolicitarRutaConsumer.java    [NUEVO — listener SQS]
+│   │       └── SolicitarRutaConsumer.java    [NUEVO — listener SQS, llama a SolicitarRutaPort]
 │   └── out/
 │       └── persistence/
 │           └── RutaJpaAdapter.java           [existente — PLAN-00, se extiende]
 ├── scheduler/
-│   └── FechaLimiteDespachoScheduler.java    [NUEVO]
+│   └── FechaLimiteDespachoScheduler.java    [NUEVO — llama a ProcesarRutasVencidasPort]
 └── dto/
     ├── request/
     │   └── SolicitarRutaRequest.java        [NUEVO]
@@ -82,7 +83,7 @@ infrastructure/
 
 - [ ] T101 Verificar que `ZonaGeografica`, `TipoVehiculo` (con `siguienteTipo()` y `capacidadKg()`), `EstadoRuta` compilan en `domain/`
 - [ ] T102 Verificar que `RutaEntity` tiene el unique index parcial `idx_rutas_zona_creada` en BD (confirmar con `\d rutas` en psql)
-- [ ] T103 Verificar que `RutaRepositoryPort` y `NotificacionDespachadorPort` están definidas en `application/port/out/`
+- [ ] T103 Verificar que `SolicitarRutaPort`, `DespacharManualPort` y `ProcesarRutasVencidasPort` están en `application/port/in/` y que `RutaRepositoryPort` y `NotificacionDespachadorPort` están en `application/port/out/`
 - [ ] T104 Verificar que vehículos y conductores existen en BD (PLAN-03 Sprint 1 completo)
 
 ---
@@ -182,35 +183,39 @@ public record ZonaGeografica(String geohash) {
   - Dado: paquete con `fechaLimiteEntrega` en el pasado
   - Entonces: lanza `FechaLimiteVencidaException`. No se crea ni modifica ninguna ruta. `NotificacionDespachadorPort.notificarAlertaPrioritaria()` llamado.
 
-- [ ] T114 [US1] `PlanificacionServiceTest` — despacho manual anticipado:
+- [ ] T114 [US1] `SolicitarRutaUseCaseTest` — despacho manual anticipado:
   - Dado: ruta en estado `CREADA` con al menos un paquete
-  - Cuando: `PlanificacionService.despacharManual(rutaId)`
+  - Cuando: `DespacharManualUseCase.ejecutar(rutaId)`
   - Entonces: ruta transiciona a `LISTA_PARA_DESPACHO`
 
-### Implementación del servicio
+### Implementación de los casos de uso
 
-- [ ] T115 [P] [US1] Implementar `PlanificacionService implements PlanificacionRouteUseCase`:
+> **Nota de arquitectura:** Cada `*UseCase` implementa exactamente su puerto y tiene solo las dependencias que necesita. Ninguno extiende una clase base ni implementa una interfaz "fat".
+
+- [ ] T115 [P] [US1] Implementar `SolicitarRutaUseCase implements SolicitarRutaPort`:
 
 ```java
-// application/planificacion/PlanificacionService.java
+// application/usecase/SolicitarRutaUseCase.java
 @Service
 @Transactional
-public class PlanificacionService implements PlanificacionRouteUseCase {
+public class SolicitarRutaUseCase implements SolicitarRutaPort {
 
     private final RutaRepositoryPort rutaRepository;
+    private final ParadaRepositoryPort paradaRepository;
     private final NotificacionDespachadorPort notificacion;
     private static final double UMBRAL_CAPACIDAD = 90.0;
     private static final int PLAZO_DESPACHO_DIAS = 5;
 
-    // Inyección por constructor (no @Autowired en campo)
-    public PlanificacionService(RutaRepositoryPort rutaRepository,
+    public SolicitarRutaUseCase(RutaRepositoryPort rutaRepository,
+                                ParadaRepositoryPort paradaRepository,
                                 NotificacionDespachadorPort notificacion) {
-        this.rutaRepository = rutaRepository;
-        this.notificacion   = notificacion;
+        this.rutaRepository   = rutaRepository;
+        this.paradaRepository = paradaRepository;
+        this.notificacion     = notificacion;
     }
 
     @Override
-    public UUID solicitarRuta(SolicitarRutaCommand command) {
+    public UUID ejecutar(SolicitarRutaCommand command) {
         validarFechaLimite(command.fechaLimiteEntrega());
 
         ZonaGeografica zona = ZonaGeografica.from(command.latitud(), command.longitud());
@@ -218,10 +223,15 @@ public class PlanificacionService implements PlanificacionRouteUseCase {
             .buscarRutaActivaPorZona(zona)           // busca estado CREADA
             .orElseGet(() -> crearNuevaRuta(zona));
 
-        ruta.agregarPaquete(command.paqueteId(), command.pesoKg());
+        ruta.agregarPeso(command.pesoKg());
         evaluarEscaladoOTransicion(ruta);
+        rutaRepository.guardar(ruta);
 
-        return rutaRepository.guardar(ruta).id();
+        // Crear Parada en estado PENDIENTE dentro de la ruta (FR-003)
+        Parada parada = Parada.nueva(ruta.id(), command);
+        paradaRepository.guardar(parada);
+
+        return ruta.id();
     }
 
     private void evaluarEscaladoOTransicion(Ruta ruta) {
@@ -234,7 +244,72 @@ public class PlanificacionService implements PlanificacionRouteUseCase {
         }
     }
 
-    // ... resto de métodos
+    // ... resto de métodos privados
+}
+```
+
+- [ ] T115b [US1] Implementar `DespacharManualUseCase implements DespacharManualPort`:
+
+```java
+// application/usecase/DespacharManualUseCase.java
+@Service
+@Transactional
+public class DespacharManualUseCase implements DespacharManualPort {
+
+    private final RutaRepositoryPort rutaRepository;
+    private final NotificacionDespachadorPort notificacion;
+
+    public DespacharManualUseCase(RutaRepositoryPort rutaRepository,
+                                   NotificacionDespachadorPort notificacion) {
+        this.rutaRepository = rutaRepository;
+        this.notificacion   = notificacion;
+    }
+
+    @Override
+    public void ejecutar(UUID rutaId) {
+        Ruta ruta = rutaRepository.buscarPorId(rutaId)
+            .orElseThrow(() -> new RutaNoEncontradaException(rutaId));
+        ruta.transicionarAListaParaDespacho();
+        rutaRepository.guardar(ruta);
+        notificacion.notificarRutaListaParaDespacho(
+            ruta.id(), ruta.zona().geohash(),
+            ruta.paradas().size(), ruta.pesoAcumuladoKg(),
+            ruta.tipoVehiculoRequerido(), "despacho_manual"
+        );
+    }
+}
+```
+
+- [ ] T115c [US1] Implementar `ProcesarRutasVencidasUseCase implements ProcesarRutasVencidasPort`:
+
+```java
+// application/usecase/ProcesarRutasVencidasUseCase.java
+@Service
+@Transactional
+public class ProcesarRutasVencidasUseCase implements ProcesarRutasVencidasPort {
+
+    private final RutaRepositoryPort rutaRepository;
+    private final NotificacionDespachadorPort notificacion;
+
+    public ProcesarRutasVencidasUseCase(RutaRepositoryPort rutaRepository,
+                                         NotificacionDespachadorPort notificacion) {
+        this.rutaRepository = rutaRepository;
+        this.notificacion   = notificacion;
+    }
+
+    @Override
+    public void ejecutar() {
+        List<Ruta> vencidas = rutaRepository.buscarRutasVencidas(Instant.now());
+        vencidas.forEach(ruta -> {
+            ruta.transicionarAListaParaDespacho();
+            rutaRepository.guardar(ruta);
+            notificacion.notificarRutaListaParaDespacho(
+                ruta.id(), ruta.zona().geohash(),
+                ruta.paradas().size(), ruta.pesoAcumuladoKg(),
+                ruta.tipoVehiculoRequerido(), "vencimiento_plazo"
+            );
+        });
+    }
 }
 ```
 
@@ -256,8 +331,7 @@ public Optional<Ruta> buscarRutaActivaPorZona(ZonaGeografica zona) {
 // Si DataIntegrityViolationException → consultar la ruta creada por el otro hilo → agregarle el paquete
 ```
 
-- [ ] T118 [US1] Implementar `PlanificacionService.despacharManual(UUID rutaId)`
-- [ ] T119 [US1] Implementar `PlanificacionService.transicionarRutasVencidas()` — consulta `RutaRepositoryPort.buscarRutasVencidas()` y transiciona cada una a `LISTA_PARA_DESPACHO` con motivo `"vencimiento_plazo"`
+- [ ] T118 [US1] Extender `RutaRepositoryPort` con `buscarRutasVencidas(Instant ahora)` — rutas en estado `CREADA` con `fechaLimiteDespacho <= ahora`
 
 ---
 
@@ -276,14 +350,24 @@ public Optional<Ruta> buscarRutaActivaPorZona(ZonaGeografica zona) {
 @RequiredArgsConstructor
 public class PlanificacionController {
 
-    private final PlanificacionRouteUseCase planificacion; // ← puerto, no servicio concreto
+    // Cada campo inyecta el puerto individual que necesita — SRP en el controller
+    private final SolicitarRutaPort solicitarRuta;
+    private final DespacharManualPort despacharManual;
+    private final ListarRutasParaDespachoPort listarRutas; // reutilizado desde despacho
 
     @PostMapping("/solicitar-ruta")
     @PreAuthorize("hasRole('SYSTEM')")
     @ResponseStatus(HttpStatus.OK)
     public SolicitarRutaResponse solicitarRuta(@Valid @RequestBody SolicitarRutaRequest request) {
-        UUID rutaId = planificacion.solicitarRuta(request.toCommand());
+        UUID rutaId = solicitarRuta.ejecutar(request.toCommand());
         return new SolicitarRutaResponse(rutaId);
+    }
+
+    @PostMapping("/rutas/{id}/despacho-manual")
+    @PreAuthorize("hasRole('DISPATCHER')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void despachoManual(@PathVariable UUID id) {
+        despacharManual.ejecutar(id);
     }
 }
 ```
@@ -298,13 +382,13 @@ public class PlanificacionController {
 @RequiredArgsConstructor
 public class SolicitarRutaConsumer {
 
-    private final PlanificacionRouteUseCase planificacion;
+    private final SolicitarRutaPort solicitarRuta; // ← puerto individual
     private final ObjectMapper objectMapper;
 
     @SqsListener("${aws.sqs.solicitudes-ruta-queue}")
     public void onSolicitarRuta(String payload) {
         SolicitarRutaEvent event = objectMapper.readValue(payload, SolicitarRutaEvent.class);
-        planificacion.solicitarRuta(event.toCommand());
+        solicitarRuta.ejecutar(event.toCommand());
     }
 }
 ```
@@ -320,13 +404,13 @@ public class SolicitarRutaConsumer {
 @RequiredArgsConstructor
 public class FechaLimiteDespachoScheduler {
 
-    private final PlanificacionRouteUseCase planificacion;
+    private final ProcesarRutasVencidasPort procesarRutasVencidas; // ← puerto individual
 
     // Cada 5 minutos — no fixedRate para evitar solapamiento si la ejecución tarda
     @Scheduled(cron = "0 */5 * * * *")
     @SchedulerLock(name = "fecha-limite-despacho", lockAtMostFor = "4m", lockAtLeastFor = "1m")
     public void transicionarRutasVencidas() {
-        planificacion.transicionarRutasVencidas();
+        procesarRutasVencidas.ejecutar();
     }
 }
 ```

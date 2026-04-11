@@ -36,53 +36,70 @@ Este plan agrupa tres SPECs que comparten las mismas entidades (`Vehiculo`, `Con
 ```
 domain/
 ├── model/
-│   ├── Vehiculo.java                       [existente — PLAN-00] ← añadir modelo_contrato a Conductor
-│   ├── Conductor.java                      [existente — PLAN-00]
-│   └── HistorialAsignacion.java            [NUEVO en dominio]
+│   ├── Vehiculo.java                                [existente — PLAN-00]
+│   ├── Conductor.java                               [existente — PLAN-00, agregar modeloContrato]
+│   └── HistorialAsignacion.java                     [existente — PLAN-00]
 ├── enums/
-│   ├── EstadoVehiculo.java                 [existente — PLAN-00]
-│   └── EstadoConductor.java                [existente — PLAN-00]
-├── exception/
-│   ├── PlacaDuplicadaException.java        [existente — PLAN-00]
-│   ├── VehiculoEnTransitoException.java    [existente — PLAN-00]
-│   └── ConductorYaAsignadoException.java   [existente — PLAN-00]
-└── port/
-    ├── in/
-    │   ├── GestionFlotaUseCase.java         [existente — PLAN-00]
-    │   └── GestionConductoresUseCase.java   [existente — PLAN-00]
-    └── out/
-        ├── VehiculoRepositoryPort.java      [existente — PLAN-00]
-        ├── ConductorRepositoryPort.java     [existente — PLAN-00]
-        ├── HistorialAsignacionRepositoryPort.java [NUEVO]
-        └── NotificacionDespachadorPort.java [existente — PLAN-00]
+│   ├── EstadoVehiculo.java                          [existente — PLAN-00]
+│   ├── EstadoConductor.java                         [existente — PLAN-00]
+│   └── ModeloContrato.java                          [existente — PLAN-00]
+└── exception/
+    ├── PlacaDuplicadaException.java                 [existente — PLAN-00]
+    ├── VehiculoEnTransitoException.java             [existente — PLAN-00]
+    └── ConductorYaAsignadoException.java            [existente — PLAN-00]
 
 application/
-└── flota/
-    ├── VehiculoService.java                [NUEVO — implementa GestionFlotaUseCase]
-    └── ConductorService.java               [NUEVO — implementa GestionConductoresUseCase]
+├── port/
+│   ├── in/
+│   │   ├── RegistrarVehiculoPort.java               [existente — PLAN-00]
+│   │   ├── ActualizarVehiculoPort.java              [existente — PLAN-00]
+│   │   ├── DarDeBajaVehiculoPort.java               [existente — PLAN-00]
+│   │   ├── ConsultarDisponibilidadFlotaPort.java    [existente — PLAN-00]
+│   │   ├── RegistrarConductorPort.java              [existente — PLAN-00]
+│   │   ├── AsignarVehiculoConductorPort.java        [existente — PLAN-00]
+│   │   ├── DesvincularVehiculoConductorPort.java    [existente — PLAN-00]
+│   │   ├── DarDeBajaConductorPort.java              [existente — PLAN-00]
+│   │   └── ConsultarHistorialConductorPort.java     [existente — PLAN-00]
+│   └── out/
+│       ├── VehiculoRepositoryPort.java              [existente — PLAN-00]
+│       ├── ConductorRepositoryPort.java             [existente — PLAN-00]
+│       ├── HistorialAsignacionRepositoryPort.java   [existente — PLAN-00]
+│       └── NotificacionDespachadorPort.java         [existente — PLAN-00]
+└── usecase/
+    ├── RegistrarVehiculoUseCase.java                [NUEVO — implements RegistrarVehiculoPort]
+    ├── ActualizarVehiculoUseCase.java               [NUEVO — implements ActualizarVehiculoPort]
+    ├── DarDeBajaVehiculoUseCase.java                [NUEVO — implements DarDeBajaVehiculoPort]
+    ├── ConsultarDisponibilidadFlotaUseCase.java     [NUEVO — implements ConsultarDisponibilidadFlotaPort]
+    ├── RegistrarConductorUseCase.java               [NUEVO — implements RegistrarConductorPort]
+    ├── AsignarVehiculoConductorUseCase.java         [NUEVO — implements AsignarVehiculoConductorPort]
+    ├── DesvincularVehiculoConductorUseCase.java     [NUEVO — implements DesvincularVehiculoConductorPort]
+    ├── DarDeBajaConductorUseCase.java               [NUEVO — implements DarDeBajaConductorPort]
+    └── ConsultarHistorialConductorUseCase.java      [NUEVO — implements ConsultarHistorialConductorPort]
 
 infrastructure/
 ├── adapter/
 │   ├── in/web/
-│   │   ├── VehiculoController.java         [NUEVO]
-│   │   └── ConductorController.java        [NUEVO — solo gestión admin de flota]
+│   │   ├── VehiculoController.java                  [NUEVO — inyecta puertos de vehículo]
+│   │   └── ConductorController.java                 [NUEVO — inyecta puertos de conductor (solo admin)]
 │   └── out/persistence/
-│       ├── VehiculoJpaAdapter.java         [existente — PLAN-00, se extiende]
-│       ├── ConductorJpaAdapter.java        [existente — PLAN-00, se extiende]
-│       └── HistorialAsignacionJpaAdapter.java [NUEVO]
+│       ├── VehiculoJpaAdapter.java                  [existente — PLAN-00, se extiende]
+│       ├── ConductorJpaAdapter.java                 [existente — PLAN-00, se extiende]
+│       └── HistorialAsignacionJpaAdapter.java       [NUEVO]
 ├── persistence/
 │   ├── entity/
-│   │   └── HistorialAsignacionEntity.java  [NUEVO]
+│   │   └── HistorialAsignacionEntity.java           [NUEVO]
 │   └── repository/
-│       └── HistorialAsignacionJpaRepository.java [NUEVO]
+│       └── HistorialAsignacionJpaRepository.java    [NUEVO]
 └── dto/
     ├── request/
-    │   ├── VehiculoRequest.java            [NUEVO]
-    │   ├── ConductorRequest.java           [NUEVO]
-    │   └── AsignacionRequest.java          [NUEVO]
+    │   ├── VehiculoRequest.java                     [NUEVO]
+    │   ├── ConductorRequest.java                    [NUEVO]
+    │   └── AsignacionRequest.java                   [NUEVO]
     └── response/
-        ├── VehiculoResponse.java           [NUEVO]
-        └── FlotaDisponibilidadResponse.java [NUEVO]
+        ├── VehiculoResponse.java                    [NUEVO]
+        ├── ConductorResponse.java                   [NUEVO]
+        ├── HistorialAsignacionResponse.java         [NUEVO]
+        └── FlotaDisponibilidadResponse.java         [NUEVO]
 ```
 
 > **Nota:** `ConductorController` aquí solo cubre la gestión ADMIN (CRUD, asignación de vehículo). Las operaciones de campo del conductor (consultar ruta, iniciar tránsito, registrar parada) están en `ConductorOperacionController` — definido en PLAN-04.
@@ -92,7 +109,8 @@ infrastructure/
 ## Phase 1: Prerequisitos
 
 - [ ] T301 Verificar que `VehiculoEntity`, `ConductorEntity`, `VehiculoJpaAdapter`, `ConductorJpaAdapter` compilan desde PLAN-00
-- [ ] T302 Verificar que `EstadoVehiculo`, `EstadoConductor`, `TipoVehiculo` están en `domain/enums/`
+- [ ] T302 Verificar que `EstadoVehiculo`, `EstadoConductor`, `TipoVehiculo`, `ModeloContrato` están en `domain/enums/`
+- [ ] T303a Verificar que los 9 puertos de entrada de esta funcionalidad existen en `application/port/in/` (PLAN-00 completo)
 
 ---
 
@@ -174,28 +192,57 @@ infrastructure/
 
 ### Implementación
 
-- [ ] T314 [P] [US3] Implementar `VehiculoService implements GestionFlotaUseCase`:
+- [ ] T314 [P] [US3] Implementar los cuatro use cases de vehículo en `application/usecase/`:
 
 ```java
+// RegistrarVehiculoUseCase.java
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class VehiculoService implements GestionFlotaUseCase {
+public class RegistrarVehiculoUseCase implements RegistrarVehiculoPort {
 
     private final VehiculoRepositoryPort vehiculoRepository;
-    private final NotificacionDespachadorPort notificacion;
 
     @Override
-    public Vehiculo registrar(RegistrarVehiculoCommand command) {
+    public Vehiculo ejecutar(RegistrarVehiculoCommand command) {
         if (vehiculoRepository.existePorPlaca(command.placa())) {
             throw new PlacaDuplicadaException(command.placa());
         }
-        Vehiculo vehiculo = Vehiculo.nuevo(command); // factory method en la entidad de dominio
+        Vehiculo vehiculo = Vehiculo.nuevo(command);
         return vehiculoRepository.guardar(vehiculo);
     }
+}
+
+// ActualizarVehiculoUseCase.java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class ActualizarVehiculoUseCase implements ActualizarVehiculoPort {
+
+    private final VehiculoRepositoryPort vehiculoRepository;
 
     @Override
-    public void darDeBaja(UUID id) {
+    public Vehiculo ejecutar(UUID id, ActualizarVehiculoCommand command) {
+        Vehiculo vehiculo = vehiculoRepository.buscarPorId(id)
+            .orElseThrow(() -> new RutaNoEncontradaException(id));
+        if (vehiculo.estado() == EstadoVehiculo.EN_TRANSITO) {
+            throw new VehiculoEnTransitoException(id);
+        }
+        vehiculo.actualizar(command);
+        return vehiculoRepository.guardar(vehiculo);
+    }
+}
+
+// DarDeBajaVehiculoUseCase.java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class DarDeBajaVehiculoUseCase implements DarDeBajaVehiculoPort {
+
+    private final VehiculoRepositoryPort vehiculoRepository;
+
+    @Override
+    public void ejecutar(UUID id) {
         Vehiculo vehiculo = vehiculoRepository.buscarPorId(id)
             .orElseThrow(() -> new RutaNoEncontradaException(id));
         if (vehiculo.estado() == EstadoVehiculo.EN_TRANSITO) {
@@ -204,7 +251,19 @@ public class VehiculoService implements GestionFlotaUseCase {
         vehiculo.marcarInactivo();
         vehiculoRepository.guardar(vehiculo);
     }
-    // ...
+}
+
+// ConsultarDisponibilidadFlotaUseCase.java
+@Service
+@RequiredArgsConstructor
+public class ConsultarDisponibilidadFlotaUseCase implements ConsultarDisponibilidadFlotaPort {
+
+    private final VehiculoRepositoryPort vehiculoRepository;
+
+    @Override
+    public List<Vehiculo> ejecutar() {
+        return vehiculoRepository.buscarTodos();
+    }
 }
 ```
 
@@ -221,24 +280,41 @@ public class VehiculoService implements GestionFlotaUseCase {
 @RequiredArgsConstructor
 public class VehiculoController {
 
-    private final GestionFlotaUseCase flota; // ← depende del puerto, no del servicio
+    // Cada campo inyecta el puerto individual que necesita — SRP en el controller
+    private final RegistrarVehiculoPort registrar;
+    private final ActualizarVehiculoPort actualizar;
+    private final DarDeBajaVehiculoPort darDeBaja;
+    private final ConsultarDisponibilidadFlotaPort consultar;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public VehiculoResponse registrar(@Valid @RequestBody VehiculoRequest request) { ... }
+    public VehiculoResponse registrar(@Valid @RequestBody VehiculoRequest request) {
+        return VehiculoResponse.from(registrar.ejecutar(request.toCommand()));
+    }
 
     @GetMapping
-    public List<VehiculoResponse> listar() { ... }
-
-    @GetMapping("/{id}")
-    public VehiculoResponse detalle(@PathVariable UUID id) { ... }
+    public List<VehiculoResponse> listar() {
+        return consultar.ejecutar().stream().map(VehiculoResponse::from).toList();
+    }
 
     @PutMapping("/{id}")
     public VehiculoResponse actualizar(@PathVariable UUID id,
-                                       @Valid @RequestBody VehiculoRequest request) { ... }
+                                       @Valid @RequestBody VehiculoRequest request) {
+        return VehiculoResponse.from(actualizar.ejecutar(id, request.toCommand()));
+    }
 
     @DeleteMapping("/{id}")
-    public void darDeBaja(@PathVariable UUID id) { ... }
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void darDeBaja(@PathVariable UUID id) {
+        darDeBaja.ejecutar(id);
+    }
+
+    @GetMapping("/disponibilidad")
+    @PreAuthorize("hasAnyRole('FLEET_ADMIN', 'DISPATCHER')")
+    public List<FlotaDisponibilidadResponse> disponibilidad() {
+        return consultar.ejecutar().stream()
+            .map(FlotaDisponibilidadResponse::from).toList();
+    }
 }
 ```
 
@@ -274,21 +350,34 @@ public class VehiculoController {
 
 ### Implementación
 
-- [ ] T322 [P] [US4] Implementar `ConductorService implements GestionConductoresUseCase`:
+- [ ] T322 [P] [US4] Implementar los cinco use cases de conductor en `application/usecase/`:
 
 ```java
+// RegistrarConductorUseCase.java
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class ConductorService implements GestionConductoresUseCase {
+public class RegistrarConductorUseCase implements RegistrarConductorPort {
+    private final ConductorRepositoryPort conductorRepository;
 
+    @Override
+    public Conductor ejecutar(RegistrarConductorCommand command) {
+        Conductor conductor = Conductor.nuevo(command);
+        return conductorRepository.guardar(conductor);
+    }
+}
+
+// AsignarVehiculoConductorUseCase.java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class AsignarVehiculoConductorUseCase implements AsignarVehiculoConductorPort {
     private final ConductorRepositoryPort conductorRepository;
     private final VehiculoRepositoryPort vehiculoRepository;
     private final HistorialAsignacionRepositoryPort historialRepository;
-    private final NotificacionDespachadorPort notificacion;
 
     @Override
-    public void asignarVehiculo(UUID conductorId, UUID vehiculoId) {
+    public void ejecutar(UUID conductorId, UUID vehiculoId) {
         Conductor conductor = conductorRepository.buscarPorId(conductorId)
             .orElseThrow(() -> new RutaNoEncontradaException(conductorId));
         Vehiculo vehiculo = vehiculoRepository.buscarPorId(vehiculoId)
@@ -304,16 +393,46 @@ public class ConductorService implements GestionConductoresUseCase {
         conductor.asignarVehiculo(vehiculoId);
         vehiculo.asignarConductor(conductorId);
         historialRepository.registrarInicio(conductorId, vehiculoId);
-
         conductorRepository.guardar(conductor);
         vehiculoRepository.guardar(vehiculo);
     }
+}
+
+// DesvincularVehiculoConductorUseCase.java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class DesvincularVehiculoConductorUseCase implements DesvincularVehiculoConductorPort {
+    private final ConductorRepositoryPort conductorRepository;
+    private final VehiculoRepositoryPort vehiculoRepository;
+    private final HistorialAsignacionRepositoryPort historialRepository;
 
     @Override
-    public void darDeBaja(UUID conductorId) {
+    public void ejecutar(UUID conductorId) {
         Conductor conductor = conductorRepository.buscarPorId(conductorId)
             .orElseThrow(() -> new RutaNoEncontradaException(conductorId));
+        conductor.desvincularVehiculo()
+            .ifPresent(vehiculoId -> {
+                vehiculoRepository.buscarPorId(vehiculoId)
+                    .ifPresent(v -> { v.desvincularConductor(); vehiculoRepository.guardar(v); });
+            });
+        historialRepository.registrarFin(conductorId);
+        conductorRepository.guardar(conductor);
+    }
+}
 
+// DarDeBajaConductorUseCase.java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class DarDeBajaConductorUseCase implements DarDeBajaConductorPort {
+    private final ConductorRepositoryPort conductorRepository;
+    private final NotificacionDespachadorPort notificacion;
+
+    @Override
+    public void ejecutar(UUID conductorId) {
+        Conductor conductor = conductorRepository.buscarPorId(conductorId)
+            .orElseThrow(() -> new RutaNoEncontradaException(conductorId));
         if (conductor.estado() == EstadoConductor.EN_RUTA) {
             notificacion.notificarAlertaPrioritaria(
                 "Conductor " + conductor.nombre() + " dado de baja mientras está EN_RUTA"
@@ -322,7 +441,18 @@ public class ConductorService implements GestionConductoresUseCase {
         conductor.marcarInactivo();
         conductorRepository.guardar(conductor);
     }
-    // ...
+}
+
+// ConsultarHistorialConductorUseCase.java
+@Service
+@RequiredArgsConstructor
+public class ConsultarHistorialConductorUseCase implements ConsultarHistorialConductorPort {
+    private final HistorialAsignacionRepositoryPort historialRepository;
+
+    @Override
+    public List<HistorialAsignacion> ejecutar(UUID conductorId) {
+        return historialRepository.buscarHistorialPorConductor(conductorId);
+    }
 }
 ```
 
@@ -335,27 +465,43 @@ public class ConductorService implements GestionConductoresUseCase {
 @RequiredArgsConstructor
 public class ConductorController {
 
-    private final GestionConductoresUseCase conductores;
+    // Cada campo inyecta el puerto individual que necesita — SRP en el controller
+    private final RegistrarConductorPort registrar;
+    private final AsignarVehiculoConductorPort asignar;
+    private final DesvincularVehiculoConductorPort desvincular;
+    private final DarDeBajaConductorPort darDeBaja;
+    private final ConsultarHistorialConductorPort historial;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ConductorResponse registrar(@Valid @RequestBody ConductorRequest request) { ... }
-
-    @GetMapping
-    public List<ConductorResponse> listar() { ... }
+    public ConductorResponse registrar(@Valid @RequestBody ConductorRequest request) {
+        return ConductorResponse.from(registrar.ejecutar(request.toCommand()));
+    }
 
     @PostMapping("/{id}/asignar-vehiculo")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void asignarVehiculo(@PathVariable UUID id,
-                                @Valid @RequestBody AsignacionRequest request) { ... }
+                                @Valid @RequestBody AsignacionRequest request) {
+        asignar.ejecutar(id, request.vehiculoId());
+    }
 
     @DeleteMapping("/{id}/desvincular-vehiculo")
-    public void desvincularVehiculo(@PathVariable UUID id) { ... }
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void desvincularVehiculo(@PathVariable UUID id) {
+        desvincular.ejecutar(id);
+    }
 
-    @PutMapping("/{id}/estado")
-    public void cambiarEstado(@PathVariable UUID id, @RequestParam EstadoConductor estado) { ... }
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void darDeBaja(@PathVariable UUID id) {
+        darDeBaja.ejecutar(id);
+    }
 
     @GetMapping("/{id}/historial-asignaciones")
-    public List<HistorialAsignacionResponse> historial(@PathVariable UUID id) { ... }
+    public List<HistorialAsignacionResponse> historial(@PathVariable UUID id) {
+        return historial.ejecutar(id).stream()
+            .map(HistorialAsignacionResponse::from).toList();
+    }
 }
 ```
 
@@ -365,21 +511,14 @@ public class ConductorController {
 
 ## Phase 5: User Story 5 — Panel de Disponibilidad (Priority: P2)
 
-- [ ] T324 [US5] `VehiculoServiceTest` — `consultarDisponibilidad()` retorna `disponibleParaPlanificacion = true` solo si estado `DISPONIBLE` Y `conductorId != null`
-
-- [ ] T325 [US5] Implementar `VehiculoService.consultarDisponibilidad()`:
+- [ ] T324 [US5] `ConsultarDisponibilidadFlotaUseCaseTest` — retorna `disponibleParaPlanificacion = true` solo si estado `DISPONIBLE` Y `conductorId != null`:
   ```java
-  // Campo calculado — no almacenado en BD
+  // Campo calculado en FlotaDisponibilidadResponse.from(vehiculo) — no almacenado en BD
   boolean disponibleParaPlanificacion = vehiculo.estado() == EstadoVehiculo.DISPONIBLE
       && vehiculo.conductorId() != null;
   ```
 
-- [ ] T326 [US5] Agregar endpoint en `VehiculoController`:
-  ```java
-  @GetMapping("/disponibilidad")    // accesible también para ROLE_DISPATCHER
-  @PreAuthorize("hasAnyRole('FLEET_ADMIN', 'DISPATCHER')")
-  public List<FlotaDisponibilidadResponse> disponibilidad() { ... }
-  ```
+- [ ] T325 [US5] `GET /api/vehiculos/disponibilidad` ya está implementado en `VehiculoController` (ver T316). Verificar que es accesible para `ROLE_FLEET_ADMIN` y `ROLE_DISPATCHER`.
 
 **Checkpoint: Admin y Despachador pueden ver la flota completa y distinguir vehículos disponibles sin conductor.**
 

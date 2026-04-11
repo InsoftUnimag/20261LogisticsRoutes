@@ -101,25 +101,45 @@ src/main/java/com/logistics/routes/
 │   │   ├── EstadoParada.java
 │   │   │   └── PENDIENTE, EXITOSA, FALLIDA, NOVEDAD, SIN_GESTION_CONDUCTOR, EXCLUIDA_DESPACHO
 │   │   ├── MotivoNovedad.java
+│   │   ├── ModeloContrato.java          ← RECORRIDO_COMPLETO | POR_PARADA (requerido por SPEC-08)
 │   │   ├── OrigenParada.java
 │   │   └── TipoCierre.java
 │   └── exception/                       ← Sin mensajes HTTP. Solo de dominio.
 │       ├── RutaNoEncontradaException.java
+│       ├── RutaNoEnTransitoException.java
 │       ├── VehiculoEnTransitoException.java
+│       ├── VehiculoNoDisponibleException.java
 │       ├── ConductorYaAsignadoException.java
+│       ├── ConductorNoDisponibleException.java
 │       ├── FechaLimiteVencidaException.java
 │       ├── PlacaDuplicadaException.java
+│       ├── ParadaNoEncontradaException.java
 │       └── ParadaSinPODException.java
 │
 ├── application/                         ← Implementaciones puras de negocio orientadas a Casos de Uso (SRP)
 │   ├── port/
 │   │   ├── in/                          ← Input Ports: Interfaces 1 a 1 con los casos de uso
-│   │   │   ├── SolicitarRutaPort.java
-│   │   │   ├── ProcesarRutasVencidasPort.java
-│   │   │   ├── ListarRutasParaDespachoPort.java
-│   │   │   ├── ConfirmarDespachoPort.java
-│   │   │   ├── RegistrarParadaPort.java
-│   │   │   └── ... (una interfaz por cada acción del sistema)
+│   │   │   ├── SolicitarRutaPort.java               ← SPEC-01 UC-001
+│   │   │   ├── DespacharManualPort.java             ← SPEC-01 escenario 6
+│   │   │   ├── ProcesarRutasVencidasPort.java       ← SPEC-01 scheduler
+│   │   │   ├── ListarRutasParaDespachoPort.java     ← SPEC-02 UC-002
+│   │   │   ├── ConfirmarDespachoPort.java           ← SPEC-02 UC-002
+│   │   │   ├── ExcluirPaqueteRutaPort.java          ← SPEC-02 UC-002
+│   │   │   ├── RegistrarVehiculoPort.java           ← SPEC-03 UC-003
+│   │   │   ├── ActualizarVehiculoPort.java          ← SPEC-03 UC-003
+│   │   │   ├── DarDeBajaVehiculoPort.java           ← SPEC-03 UC-003
+│   │   │   ├── ConsultarDisponibilidadFlotaPort.java ← SPEC-05 UC-005
+│   │   │   ├── RegistrarConductorPort.java          ← SPEC-04 UC-004
+│   │   │   ├── AsignarVehiculoConductorPort.java    ← SPEC-04 UC-004
+│   │   │   ├── DesvincularVehiculoConductorPort.java ← SPEC-04 UC-004
+│   │   │   ├── DarDeBajaConductorPort.java          ← SPEC-04 UC-004
+│   │   │   ├── ConsultarHistorialConductorPort.java ← SPEC-04 UC-004
+│   │   │   ├── ConsultarRutaActivaPort.java         ← SPEC-06 UC-006
+│   │   │   ├── IniciarTransitoPort.java             ← SPEC-06 UC-006
+│   │   │   ├── RegistrarParadaPort.java             ← SPEC-07 UC-007a
+│   │   │   ├── CerrarRutaManualPort.java            ← SPEC-07 UC-007b
+│   │   │   ├── ForzarCierreRutaPort.java            ← SPEC-07 UC-007b
+│   │   │   └── CerrarRutasExcedidasPort.java        ← SPEC-07 scheduler
 │   │   └── out/                         ← Output Ports: Contratos de salida (repos, mensajería, etc.)
 │   │       ├── RutaRepositoryPort.java
 │   │       ├── VehiculoRepositoryPort.java
@@ -131,12 +151,27 @@ src/main/java/com/logistics/routes/
 │   │       ├── IntegracionModulo3Port.java
 │   │       └── AlmacenamientoArchivoPort.java
 │   └── usecase/                         ← Implementaciones (1 clase por acción con método ejecutar)
-│       ├── SolicitarRutaUseCase.java            ← implements SolicitarRutaPort
-│       ├── ProcesarRutasVencidasUseCase.java    ← implements ProcesarRutasVencidasPort
-│       ├── ListarRutasParaDespachoUseCase.java  ← implements ListarRutasParaDespachoPort
-│       ├── ConfirmarDespachoUseCase.java        ← implements ConfirmarDespachoPort
-│       ├── RegistrarParadaUseCase.java          ← implements RegistrarParadaPort
-│       └── ... (una clase por cada acción del sistema)
+│       ├── SolicitarRutaUseCase.java                    ← implements SolicitarRutaPort
+│       ├── DespacharManualUseCase.java                  ← implements DespacharManualPort
+│       ├── ProcesarRutasVencidasUseCase.java            ← implements ProcesarRutasVencidasPort
+│       ├── ListarRutasParaDespachoUseCase.java          ← implements ListarRutasParaDespachoPort
+│       ├── ConfirmarDespachoUseCase.java                ← implements ConfirmarDespachoPort
+│       ├── ExcluirPaqueteRutaUseCase.java               ← implements ExcluirPaqueteRutaPort
+│       ├── RegistrarVehiculoUseCase.java                ← implements RegistrarVehiculoPort
+│       ├── ActualizarVehiculoUseCase.java               ← implements ActualizarVehiculoPort
+│       ├── DarDeBajaVehiculoUseCase.java                ← implements DarDeBajaVehiculoPort
+│       ├── ConsultarDisponibilidadFlotaUseCase.java     ← implements ConsultarDisponibilidadFlotaPort
+│       ├── RegistrarConductorUseCase.java               ← implements RegistrarConductorPort
+│       ├── AsignarVehiculoConductorUseCase.java         ← implements AsignarVehiculoConductorPort
+│       ├── DesvincularVehiculoConductorUseCase.java     ← implements DesvincularVehiculoConductorPort
+│       ├── DarDeBajaConductorUseCase.java               ← implements DarDeBajaConductorPort
+│       ├── ConsultarHistorialConductorUseCase.java      ← implements ConsultarHistorialConductorPort
+│       ├── ConsultarRutaActivaUseCase.java              ← implements ConsultarRutaActivaPort
+│       ├── IniciarTransitoUseCase.java                  ← implements IniciarTransitoPort
+│       ├── RegistrarParadaUseCase.java                  ← implements RegistrarParadaPort
+│       ├── CerrarRutaManualUseCase.java                 ← implements CerrarRutaManualPort
+│       ├── ForzarCierreRutaUseCase.java                 ← implements ForzarCierreRutaPort
+│       └── CerrarRutasExcedidasUseCase.java             ← implements CerrarRutasExcedidasPort
 │
 └── infrastructure/                      ← Implementan los puertos de salida
     ├── adapter/
@@ -198,6 +233,8 @@ src/main/java/com/logistics/routes/
             ├── RutaDetalleResponse.java
             ├── RutaConductorResponse.java
             ├── VehiculoResponse.java
+            ├── ConductorResponse.java
+            ├── HistorialAsignacionResponse.java
             ├── FlotaDisponibilidadResponse.java
             └── ErrorResponse.java
 ```
@@ -336,6 +373,7 @@ CREATE INDEX idx_paradas_paquete ON paradas(paquete_id);
 
 // Planificación
 interface SolicitarRutaPort { UUID ejecutar(SolicitarRutaCommand command); }
+interface DespacharManualPort { void ejecutar(UUID rutaId); } // Despachador avanza ruta manualmente (SPEC-01 esc. 6)
 interface ProcesarRutasVencidasPort { void ejecutar(); } // Scheduler
 
 // Despacho
@@ -409,15 +447,15 @@ interface NotificacionDespachadorPort {
 - [ ] T006 Verificar que Flyway migra correctamente en el startup con `validate-on-migrate=true`
 
 ### F0.3 — Dominio puro
-- [ ] T007 Crear todos los enums de dominio (incluyendo `TipoVehiculo` con `siguienteTipo()` y `capacidadKg()`)
+- [ ] T007 Crear todos los enums de dominio: `EstadoRuta`, `TipoVehiculo` (con `siguienteTipo()` y `capacidadKg()`), `EstadoVehiculo`, `EstadoConductor`, `EstadoParada`, `MotivoNovedad`, `ModeloContrato`, `OrigenParada`, `TipoCierre`
 - [ ] T008 Crear `ZonaGeografica` record inmutable con `GeoHash.geoHashStringWithCharacterPrecision(lat, lon, 5)`
 - [ ] T009 Crear entidades de dominio como POJOs (sin anotaciones JPA): `Ruta`, `Vehiculo`, `Conductor`, `Parada`, `HistorialAsignacion`
-- [ ] T010 Crear jerarquía de excepciones de dominio
+- [ ] T010 Crear jerarquía de excepciones de dominio: `RutaNoEncontradaException`, `RutaNoEnTransitoException`, `VehiculoEnTransitoException`, `VehiculoNoDisponibleException`, `ConductorYaAsignadoException`, `ConductorNoDisponibleException`, `FechaLimiteVencidaException`, `PlacaDuplicadaException`, `ParadaNoEncontradaException`, `ParadaSinPODException`
 
 ### F0.4 — Capa de aplicación (puertos y casos de uso)
-- [ ] T011b Crear todas las interfaces simples de `application/port/in/` (`*Port` con 1 solo método)
-- [ ] T011c Crear todas las interfaces de `application/port/out/` (Repository y Integration ports) vacías pero compilables
-- [ ] T011d Crear las clases de implementación en `application/usecase/` indicando `implements [Action]Port`
+- [ ] T011b Crear las 21 interfaces de `application/port/in/` (una por acción, 1 método `ejecutar`): `SolicitarRutaPort`, `DespacharManualPort`, `ProcesarRutasVencidasPort`, `ListarRutasParaDespachoPort`, `ConfirmarDespachoPort`, `ExcluirPaqueteRutaPort`, `RegistrarVehiculoPort`, `ActualizarVehiculoPort`, `DarDeBajaVehiculoPort`, `ConsultarDisponibilidadFlotaPort`, `RegistrarConductorPort`, `AsignarVehiculoConductorPort`, `DesvincularVehiculoConductorPort`, `DarDeBajaConductorPort`, `ConsultarHistorialConductorPort`, `ConsultarRutaActivaPort`, `IniciarTransitoPort`, `RegistrarParadaPort`, `CerrarRutaManualPort`, `ForzarCierreRutaPort`, `CerrarRutasExcedidasPort`
+- [ ] T011c Crear todas las interfaces de `application/port/out/` (Repository y Integration ports) vacías pero compilables: `RutaRepositoryPort`, `VehiculoRepositoryPort`, `ConductorRepositoryPort`, `ParadaRepositoryPort`, `HistorialAsignacionRepositoryPort`, `NotificacionDespachadorPort`, `IntegracionModulo1Port`, `IntegracionModulo3Port`, `AlmacenamientoArchivoPort`
+- [ ] T011d Crear las 21 clases `*UseCase` en `application/usecase/`, cada una implementando su puerto correspondiente
 
 ### F0.5 — Capa de persistencia
 - [ ] T012 Crear entidades JPA (`*Entity`) separadas de las entidades de dominio

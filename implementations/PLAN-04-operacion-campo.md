@@ -38,54 +38,60 @@ Este plan cubre la experiencia completa del conductor en campo: consulta de la r
 ```
 domain/
 ├── model/
-│   └── Parada.java                              [NUEVO]
+│   └── Parada.java                                        [NUEVO]
 ├── enums/
-│   ├── EstadoParada.java                        [existente — PLAN-00]
-│   ├── MotivoNovedad.java                       [existente — PLAN-00]
-│   ├── OrigenParada.java                        [existente — PLAN-00]
-│   └── TipoCierre.java                          [existente — PLAN-00]
-├── exception/
-│   └── ParadaSinPODException.java              [existente — PLAN-00]
-└── port/
-    ├── in/
-    │   └── OperacionCampoUseCase.java           [existente — PLAN-00]
-    └── out/
-        ├── ParadaRepositoryPort.java            [existente — PLAN-00]
-        ├── IntegracionModulo1Port.java          [existente — PLAN-00]
-        ├── IntegracionModulo3Port.java          [existente — PLAN-00]
-        └── AlmacenamientoArchivoPort.java       [existente — PLAN-00]
+│   ├── EstadoParada.java                                  [existente — PLAN-00]
+│   ├── MotivoNovedad.java                                 [existente — PLAN-00]
+│   ├── OrigenParada.java                                  [existente — PLAN-00]
+│   └── TipoCierre.java                                    [existente — PLAN-00]
+└── exception/
+    ├── ParadaSinPODException.java                         [existente — PLAN-00]
+    ├── ParadaNoEncontradaException.java                   [existente — PLAN-00]
+    └── RutaNoEnTransitoException.java                     [existente — PLAN-00]
 
 application/
-└── campo/
-    ├── ConductorOperacionService.java           [NUEVO — implements OperacionCampoUseCase]
-    └── CierreRutaService.java                   [NUEVO]
+├── port/
+│   └── in/
+│       ├── ConsultarRutaActivaPort.java                   [existente — PLAN-00]
+│       ├── IniciarTransitoPort.java                       [existente — PLAN-00]
+│       ├── RegistrarParadaPort.java                       [existente — PLAN-00]
+│       ├── CerrarRutaManualPort.java                      [existente — PLAN-00]
+│       ├── ForzarCierreRutaPort.java                      [existente — PLAN-00]
+│       └── CerrarRutasExcedidasPort.java                  [existente — PLAN-00]
+└── usecase/
+    ├── ConsultarRutaActivaUseCase.java                    [NUEVO — implements ConsultarRutaActivaPort]
+    ├── IniciarTransitoUseCase.java                        [NUEVO — implements IniciarTransitoPort]
+    ├── RegistrarParadaUseCase.java                        [NUEVO — implements RegistrarParadaPort]
+    ├── CerrarRutaManualUseCase.java                       [NUEVO — implements CerrarRutaManualPort]
+    ├── ForzarCierreRutaUseCase.java                       [NUEVO — implements ForzarCierreRutaPort]
+    └── CerrarRutasExcedidasUseCase.java                   [NUEVO — implements CerrarRutasExcedidasPort]
 
 infrastructure/
 ├── adapter/
 │   ├── in/web/
-│   │   ├── ConductorOperacionController.java   [NUEVO — NO es ConductorController]
-│   │   └── DespachoController.java             (ya existe PLAN-02 — se extiende con forzar-cierre)
+│   │   ├── ConductorOperacionController.java              [NUEVO — inyecta puertos del conductor]
+│   │   └── DespachoController.java                        (ya existe PLAN-02 — inyecta ForzarCierreRutaPort)
 │   └── out/
 │       ├── persistence/
-│       │   └── ParadaJpaAdapter.java           [existente — PLAN-00, se extiende]
-│       ├── messaging/                          ← REEMPLAZA IntegracionExternaService
-│       │   ├── SqsIntegracionModulo1Adapter.java [NUEVO — implements IntegracionModulo1Port]
-│       │   └── SqsIntegracionModulo3Adapter.java [NUEVO — implements IntegracionModulo3Port]
+│       │   └── ParadaJpaAdapter.java                      [existente — PLAN-00, se extiende]
+│       ├── messaging/
+│       │   ├── SqsIntegracionModulo1Adapter.java          [NUEVO — implements IntegracionModulo1Port]
+│       │   └── SqsIntegracionModulo3Adapter.java          [NUEVO — implements IntegracionModulo3Port]
 │       └── storage/
-│           └── S3AlmacenamientoAdapter.java    [NUEVO — implements AlmacenamientoArchivoPort]
+│           └── S3AlmacenamientoAdapter.java               [NUEVO — implements AlmacenamientoArchivoPort]
 ├── persistence/
 │   ├── entity/
-│   │   └── ParadaEntity.java                   [existente — PLAN-00]
+│   │   └── ParadaEntity.java                              [existente — PLAN-00]
 │   └── repository/
-│       └── ParadaJpaRepository.java            [existente — PLAN-00]
+│       └── ParadaJpaRepository.java                       [existente — PLAN-00]
 ├── scheduler/
-│   └── CierreAutomaticoScheduler.java          [NUEVO]
+│   └── CierreAutomaticoScheduler.java                     [NUEVO — llama a CerrarRutasExcedidasPort]
 └── dto/
     ├── request/
-    │   ├── RegistrarParadaRequest.java         [NUEVO]
-    │   └── CierreRutaRequest.java              [NUEVO]
+    │   ├── RegistrarParadaRequest.java                    [NUEVO]
+    │   └── CierreRutaRequest.java                         [NUEVO]
     └── response/
-        └── RutaConductorResponse.java          [NUEVO]
+        └── RutaConductorResponse.java                     [NUEVO]
 ```
 
 ---
@@ -93,7 +99,7 @@ infrastructure/
 ## Phase 1: Prerequisitos
 
 - [ ] T401 Verificar que existen rutas en estado `CONFIRMADA` con conductor y vehículo asignados (PLAN-02 completo)
-- [ ] T402 Verificar que `ParadaRepositoryPort`, `IntegracionModulo1Port`, `IntegracionModulo3Port`, `AlmacenamientoArchivoPort` están definidas en `application/port/out/`
+- [ ] T402 Verificar que `ConsultarRutaActivaPort`, `IniciarTransitoPort`, `RegistrarParadaPort`, `CerrarRutaManualPort`, `ForzarCierreRutaPort`, `CerrarRutasExcedidasPort` están en `application/port/in/` y que `ParadaRepositoryPort`, `IntegracionModulo1Port`, `IntegracionModulo3Port`, `AlmacenamientoArchivoPort` están en `application/port/out/` (PLAN-00 completo)
 - [ ] T403 Verificar configuración AWS (credenciales SQS + S3 en `application-dev.yml` / Secrets Manager en prod)
 
 ---
@@ -254,36 +260,32 @@ public class S3AlmacenamientoAdapter implements AlmacenamientoArchivoPort {
 
 ### Tests (TDD)
 
-- [ ] T409 [P] [US6] `ConductorOperacionServiceTest` — consulta retorna ruta con paradas ordenadas:
+- [ ] T409 [P] [US6] `ConsultarRutaActivaUseCaseTest` — consulta retorna ruta con paradas ordenadas:
   - Mock de `RutaRepositoryPort`: retorna ruta `CONFIRMADA` con conductorId correcto
   - Mock de `ParadaRepositoryPort`: retorna lista de paradas ordenadas
   - Resultado: `RutaConductorView` con paradas en orden correcto
 
-- [ ] T410 [P] [US6] `ConductorOperacionServiceTest` — sin ruta asignada → respuesta vacía con mensaje
+- [ ] T410 [P] [US6] `ConsultarRutaActivaUseCaseTest` — sin ruta asignada → retorna `RutaConductorView.sinRutaAsignada()`
 
-- [ ] T411 [P] [US6] `ConductorOperacionServiceTest` — iniciar tránsito:
+- [ ] T411 [P] [US6] `IniciarTransitoUseCaseTest` — iniciar tránsito:
   - Ruta en `CONFIRMADA` → transiciona a `EN_TRANSITO`, registra `fechaHoraInicio`
   - `IntegracionModulo1Port.publishPaqueteEnTransito()` llamado una vez por cada parada
 
 ### Implementación
 
-- [ ] T412 [P] [US6] Implementar `ConductorOperacionService implements OperacionCampoUseCase`:
+- [ ] T412 [P] [US6] Implementar `ConsultarRutaActivaUseCase implements ConsultarRutaActivaPort` e `IniciarTransitoUseCase implements IniciarTransitoPort`:
 
 ```java
+// application/usecase/ConsultarRutaActivaUseCase.java
 @Service
-@Transactional
 @RequiredArgsConstructor
-public class ConductorOperacionService implements OperacionCampoUseCase {
+public class ConsultarRutaActivaUseCase implements ConsultarRutaActivaPort {
 
     private final RutaRepositoryPort rutaRepository;
     private final ParadaRepositoryPort paradaRepository;
-    private final IntegracionModulo1Port integracionM1;
-    private final IntegracionModulo3Port integracionM3;
-    private final AlmacenamientoArchivoPort almacenamiento;
-    private final CierreRutaService cierreRutaService;
 
     @Override
-    public RutaConductorView consultarRutaActiva(UUID conductorId) {
+    public RutaConductorView ejecutar(UUID conductorId) {
         return rutaRepository.buscarRutaActivaDeConductor(conductorId)
             .map(ruta -> {
                 List<Parada> paradas = paradaRepository.buscarPorRutaId(ruta.id());
@@ -291,12 +293,22 @@ public class ConductorOperacionService implements OperacionCampoUseCase {
             })
             .orElse(RutaConductorView.sinRutaAsignada());
     }
+}
+
+// application/usecase/IniciarTransitoUseCase.java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class IniciarTransitoUseCase implements IniciarTransitoPort {
+
+    private final RutaRepositoryPort rutaRepository;
+    private final ParadaRepositoryPort paradaRepository;
+    private final IntegracionModulo1Port integracionM1;
 
     @Override
-    public void iniciarTransito(UUID rutaId, UUID conductorId) {
+    public void ejecutar(UUID rutaId, UUID conductorId) {
         Ruta ruta = rutaRepository.buscarPorId(rutaId)
             .orElseThrow(() -> new RutaNoEncontradaException(rutaId));
-
         ruta.iniciarTransito(); // cambia estado a EN_TRANSITO, registra fechaHoraInicio
         rutaRepository.guardar(ruta);
 
@@ -305,7 +317,6 @@ public class ConductorOperacionService implements OperacionCampoUseCase {
             integracionM1.publishPaqueteEnTransito(parada.paqueteId(), rutaId, ahora)
         );
     }
-    // ...
 }
 ```
 
@@ -324,37 +335,36 @@ public class ConductorOperacionService implements OperacionCampoUseCase {
 @RequiredArgsConstructor
 public class ConductorOperacionController {
 
-    private final OperacionCampoUseCase operacion;
+    // Cada campo inyecta el puerto individual que necesita — SRP en el controller
+    private final ConsultarRutaActivaPort consultarRutaActiva;
+    private final IniciarTransitoPort iniciarTransito;
+    private final RegistrarParadaPort registrarParada;
+    private final CerrarRutaManualPort cerrarRuta;
 
     @GetMapping("/ruta-activa")
     public RutaConductorResponse rutaActiva(Authentication auth) {
         UUID conductorId = extractConductorId(auth);
-        return operacion.consultarRutaActiva(conductorId).toResponse();
+        return consultarRutaActiva.ejecutar(conductorId).toResponse();
     }
 
     @PostMapping("/rutas/{id}/iniciar-transito")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void iniciarTransito(@PathVariable UUID id, Authentication auth) {
-        operacion.iniciarTransito(id, extractConductorId(auth));
+        iniciarTransito.ejecutar(id, extractConductorId(auth));
     }
 
     @PostMapping("/rutas/{id}/paradas/{paqueteId}/resultado")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void registrarResultado(@PathVariable UUID id,
                                    @PathVariable UUID paqueteId,
                                    @Valid @RequestBody RegistrarParadaRequest request) {
-        operacion.registrarResultadoParada(id, request.toCommand(paqueteId));
-    }
-
-    @PostMapping("/rutas/{id}/paradas/{paqueteId}/foto")
-    public Map<String, String> subirFoto(@PathVariable UUID id,
-                                          @PathVariable UUID paqueteId,
-                                          @RequestParam("file") MultipartFile file) {
-        // Subir a S3, retornar URL
+        registrarParada.ejecutar(id, request.toCommand(paqueteId));
     }
 
     @PostMapping("/rutas/{id}/cerrar")
     public void cerrarRuta(@PathVariable UUID id,
                            @Valid @RequestBody CierreRutaRequest request) {
-        operacion.cerrarRuta(id, request.confirmarConPendientes());
+        cerrarRuta.ejecutar(id, request.confirmarConPendientes());
     }
 }
 ```
@@ -371,56 +381,67 @@ public class ConductorOperacionController {
 
 ### Tests (TDD)
 
-- [ ] T415 [P] [US7a] `ConductorOperacionServiceTest` — parada EXITOSA con foto:
+- [ ] T415 [P] [US7a] `RegistrarParadaUseCaseTest` — parada EXITOSA con foto:
   - `RegistrarParadaCommand` con resultado EXITOSA, `urlFoto != null`, `fechaHoraAccion` del conductor
   - Parada → `EXITOSA`. `IntegracionModulo1Port.publishPaqueteEntregado()` llamado. Timestamp = `fechaHoraAccion` (no `now()`)
 
-- [ ] T416 [P] [US7a] `ConductorOperacionServiceTest` — parada EXITOSA SIN foto → `ParadaSinPODException`:
+- [ ] T416 [P] [US7a] `RegistrarParadaUseCaseTest` — parada EXITOSA SIN foto → `ParadaSinPODException`:
   - `urlFoto = null` → excepción lanzada antes de persistir
 
-- [ ] T417 [P] [US7a] `ConductorOperacionServiceTest` — parada FALLIDA con motivo:
+- [ ] T417 [P] [US7a] `RegistrarParadaUseCaseTest` — parada FALLIDA con motivo:
   - `motivoNovedad = CLIENTE_AUSENTE` → parada `FALLIDA`. `publishParadaFallida()` llamado.
 
-- [ ] T418 [P] [US7a] `ConductorOperacionServiceTest` — novedad grave:
+- [ ] T418 [P] [US7a] `RegistrarParadaUseCaseTest` — novedad grave:
   - `tipoNovedad = DAÑADO_EN_RUTA` → parada `NOVEDAD`. `publishNovedadGrave()` llamado.
 
-- [ ] T419 [US7a] `ConductorOperacionServiceTest` — offline timestamp:
+- [ ] T419 [US7a] `RegistrarParadaUseCaseTest` — offline timestamp:
   - El campo `fechaHoraAccion` del `RegistrarParadaCommand` (enviado por el conductor) se usa como `fechaHoraGestion`, no `Instant.now()`
 
 ### Implementación
 
-- [ ] T420 [P] [US7a] Implementar `ConductorOperacionService.registrarResultadoParada()`:
+- [ ] T420 [P] [US7a] Implementar `RegistrarParadaUseCase implements RegistrarParadaPort`:
 
 ```java
-@Override
-public void registrarResultadoParada(UUID rutaId, RegistrarParadaCommand command) {
-    Ruta ruta = rutaRepository.buscarPorId(rutaId)
-        .filter(r -> r.estado() == EstadoRuta.EN_TRANSITO)
-        .orElseThrow(() -> new RutaNoEnTransitoException(rutaId));
+// application/usecase/RegistrarParadaUseCase.java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class RegistrarParadaUseCase implements RegistrarParadaPort {
 
-    Parada parada = paradaRepository.buscarPorRutaYPaquete(rutaId, command.paqueteId())
-        .orElseThrow(() -> new ParadaNoEncontradaException(command.paqueteId()));
+    private final RutaRepositoryPort rutaRepository;
+    private final ParadaRepositoryPort paradaRepository;
+    private final IntegracionModulo1Port integracionM1;
 
-    switch (command.resultado()) {
-        case EXITOSA -> {
-            parada.marcarExitosa(command.urlFoto(), command.urlFirma(),
-                                  command.nombreReceptor(), command.fechaHoraAccion());
-            integracionM1.publishPaqueteEntregado(command.paqueteId(), rutaId,
-                command.fechaHoraAccion(), command.urlFoto(), command.urlFirma());
+    @Override
+    public void ejecutar(UUID rutaId, RegistrarParadaCommand command) {
+        Ruta ruta = rutaRepository.buscarPorId(rutaId)
+            .filter(r -> r.estado() == EstadoRuta.EN_TRANSITO)
+            .orElseThrow(() -> new RutaNoEnTransitoException(rutaId));
+
+        Parada parada = paradaRepository.buscarPorRutaYPaquete(rutaId, command.paqueteId())
+            .orElseThrow(() -> new ParadaNoEncontradaException(command.paqueteId()));
+
+        switch (command.resultado()) {
+            case EXITOSA -> {
+                parada.marcarExitosa(command.urlFoto(), command.urlFirma(),
+                                     command.nombreReceptor(), command.fechaHoraAccion());
+                integracionM1.publishPaqueteEntregado(command.paqueteId(), rutaId,
+                    command.fechaHoraAccion(), command.urlFoto(), command.urlFirma());
+            }
+            case FALLIDA -> {
+                parada.marcarFallida(command.motivoNovedad(), command.fechaHoraAccion());
+                integracionM1.publishParadaFallida(command.paqueteId(), rutaId,
+                    command.fechaHoraAccion(), command.motivoNovedad());
+            }
+            case NOVEDAD -> {
+                parada.marcarNovedad(command.motivoNovedad(), command.fechaHoraAccion());
+                integracionM1.publishNovedadGrave(command.paqueteId(), rutaId,
+                    command.fechaHoraAccion(), command.motivoNovedad());
+            }
         }
-        case FALLIDA -> {
-            parada.marcarFallida(command.motivoNovedad(), command.fechaHoraAccion());
-            integracionM1.publishParadaFallida(command.paqueteId(), rutaId,
-                command.fechaHoraAccion(), command.motivoNovedad());
-        }
-        case NOVEDAD -> {
-            parada.marcarNovedad(command.motivoNovedad(), command.fechaHoraAccion());
-            integracionM1.publishNovedadGrave(command.paqueteId(), rutaId,
-                command.fechaHoraAccion(), command.motivoNovedad());
-        }
+
+        paradaRepository.guardar(parada);
     }
-
-    paradaRepository.guardar(parada);
 }
 ```
 
@@ -448,36 +469,39 @@ public void registrarResultadoParada(UUID rutaId, RegistrarParadaCommand command
 
 ### Tests (TDD)
 
-- [ ] T422 [P] [US7b] `CierreRutaServiceTest` — cierre exitoso con todas las paradas gestionadas:
+- [ ] T422 [P] [US7b] `CerrarRutaManualUseCaseTest` — cierre exitoso con todas las paradas gestionadas:
   - No hay paradas `PENDIENTE` → ruta `CERRADA_MANUAL`. `IntegracionModulo3Port.publishRutaCerrada()` llamado.
   - Vehículo pasa a `DISPONIBLE` y conductor pasa a `ACTIVO`.
 
-- [ ] T423 [P] [US7b] `CierreRutaServiceTest` — cierre con paradas pendientes sin confirmar:
-  - `confirmarConPendientes = false` → retorna lista de paradas pendientes. No cierra.
+- [ ] T423 [P] [US7b] `CerrarRutaManualUseCaseTest` — cierre con paradas pendientes y `confirmarConPendientes = false`:
+  - Lanza excepción o retorna estado indicando que hay pendientes. No cierra la ruta.
 
-- [ ] T424 [P] [US7b] `CierreRutaServiceTest` — cierre con `confirmarConPendientes = true`:
+- [ ] T424 [P] [US7b] `CerrarRutaManualUseCaseTest` — cierre con `confirmarConPendientes = true`:
   - Paradas `PENDIENTE` → marcadas `SIN_GESTION_CONDUCTOR` con `origen = SISTEMA`
   - `IntegracionModulo1Port.publishParadasSinGestionar()` llamado
   - `IntegracionModulo3Port.publishRutaCerrada()` llamado
 
-- [ ] T425 [US7b] `CierreRutaServiceTest` — cierre forzado por Despachador:
+- [ ] T425 [US7b] `ForzarCierreRutaUseCaseTest` — cierre forzado por Despachador:
   - `tipoCierre = FORZADO_DESPACHADOR` → ruta `CERRADA_FORZADA`
 
 - [ ] T426 [P] [US7b] `CierreAutomaticoSchedulerTest` — rutas > 2 días `EN_TRANSITO` → cierre automático:
-  - MockBean del servicio. Verificar que `cerrarRutasExcedidas()` es llamado por el scheduler.
+  - MockBean del puerto `CerrarRutasExcedidasPort`. Verificar que `ejecutar()` es llamado por el scheduler.
 
-- [ ] T427 [US7b] `CierreRutaServiceTest` — payload `RUTA_CERRADA` incluye `modelo_contrato` del conductor:
+- [ ] T427 [US7b] `CerrarRutaManualUseCaseTest` — payload `RUTA_CERRADA` incluye `modelo_contrato` del conductor:
   - Verificar que `IntegracionModulo3Port.publishRutaCerrada()` recibe evento con `conductor.modeloContrato` según SPEC-08
 
 ### Implementación
 
-- [ ] T428 [P] [US7b] Implementar `CierreRutaService`:
+- [ ] T428 [P] [US7b] Implementar los use cases de cierre: `CerrarRutaManualUseCase`, `ForzarCierreRutaUseCase`, `CerrarRutasExcedidasUseCase`:
+
+> **Nota de arquitectura:** Los tres use cases comparten la lógica del cierre. Extraerla a un método privado de apoyo o a un helper de dominio (no a un servicio Spring) para evitar dependencias entre use cases.
 
 ```java
+// application/usecase/CerrarRutaManualUseCase.java
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class CierreRutaService {
+public class CerrarRutaManualUseCase implements CerrarRutaManualPort {
 
     private final RutaRepositoryPort rutaRepository;
     private final ParadaRepositoryPort paradaRepository;
@@ -485,10 +509,14 @@ public class CierreRutaService {
     private final VehiculoRepositoryPort vehiculoRepository;
     private final IntegracionModulo1Port integracionM1;
     private final IntegracionModulo3Port integracionM3;
-    private final NotificacionDespachadorPort notificacion;
 
-    public CierreRutaResult cerrarRuta(UUID rutaId, boolean confirmarConPendientes,
-                                        TipoCierre tipoCierre) {
+    @Override
+    public void ejecutar(UUID rutaId, boolean confirmarConPendientes) {
+        cerrar(rutaId, confirmarConPendientes, TipoCierre.MANUAL);
+    }
+
+    // Lógica de cierre compartida (método package-private para reutilizar en los otros use cases)
+    void cerrar(UUID rutaId, boolean confirmarConPendientes, TipoCierre tipoCierre) {
         Ruta ruta = rutaRepository.buscarPorId(rutaId)
             .filter(r -> r.estado() == EstadoRuta.EN_TRANSITO)
             .orElseThrow(() -> new RutaNoEnTransitoException(rutaId));
@@ -526,7 +554,6 @@ public class CierreRutaService {
         vehiculoRepository.guardar(vehiculo);
         conductorRepository.guardar(conductor);
 
-        return CierreRutaResult.exitoso();
     }
 
     private void publishRutaCerrada(Ruta ruta) {
@@ -540,18 +567,53 @@ public class CierreRutaService {
 }
 ```
 
-- [ ] T429 [US7b] Implementar `OperacionCampoUseCase.cerrarRuta()` que delega a `CierreRutaService`
-- [ ] T430 [US7b] Agregar endpoint en `ConductorOperacionController`:
-  ```java
-  @PostMapping("/rutas/{id}/cerrar")
-  // body: { "confirmarConPendientes": true/false }
-  ```
-- [ ] T431 [US7b] Agregar endpoint en `DespachoController`:
-  ```java
-  @PostMapping("/rutas/{id}/forzar-cierre")
-  @PreAuthorize("hasRole('DISPATCHER')")
-  // Llama: operacion.forzarCierre(id)
-  ```
+- [ ] T428b [P] [US7b] Implementar `ForzarCierreRutaUseCase implements ForzarCierreRutaPort`:
+
+```java
+// application/usecase/ForzarCierreRutaUseCase.java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class ForzarCierreRutaUseCase implements ForzarCierreRutaPort {
+
+    private final CerrarRutaManualUseCase cierreHelper; // reutiliza lógica de cierre
+
+    @Override
+    public void ejecutar(UUID rutaId) {
+        cierreHelper.cerrar(rutaId, true, TipoCierre.FORZADO_DESPACHADOR);
+    }
+}
+```
+
+- [ ] T428c [P] [US7b] Implementar `CerrarRutasExcedidasUseCase implements CerrarRutasExcedidasPort`:
+
+```java
+// application/usecase/CerrarRutasExcedidasUseCase.java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class CerrarRutasExcedidasUseCase implements CerrarRutasExcedidasPort {
+
+    private final RutaRepositoryPort rutaRepository;
+    private final CerrarRutaManualUseCase cierreHelper;
+    private final NotificacionDespachadorPort notificacion;
+
+    @Override
+    public void ejecutar() {
+        Instant limiteTransito = Instant.now().minus(2, ChronoUnit.DAYS);
+        List<Ruta> excedidas = rutaRepository.buscarRutasEnTransitoExcedidas(limiteTransito);
+        excedidas.forEach(ruta -> {
+            cierreHelper.cerrar(ruta.id(), true, TipoCierre.AUTOMATICO);
+            notificacion.notificarAlertaPrioritaria(
+                "Ruta " + ruta.id() + " cerrada automáticamente por exceder 2 días en tránsito"
+            );
+        });
+    }
+}
+```
+
+- [ ] T429 [US7b] Endpoint `POST /api/conductor/rutas/{id}/cerrar` ya implementado en `ConductorOperacionController` (ver T414 — inyecta `CerrarRutaManualPort`)
+- [ ] T430 [US7b] Endpoint `POST /api/despacho/rutas/{id}/forzar-cierre` ya implementado en `DespachoController` (ver PLAN-02 T216 — inyecta `ForzarCierreRutaPort`)
 
 - [ ] T432 [P] [US7b] Implementar `CierreAutomaticoScheduler`:
 
@@ -560,21 +622,22 @@ public class CierreRutaService {
 @RequiredArgsConstructor
 public class CierreAutomaticoScheduler {
 
-    private final OperacionCampoUseCase operacion;
-    private final NotificacionDespachadorPort notificacion;
+    private final CerrarRutasExcedidasPort cerrarRutasExcedidas; // ← puerto individual
 
     // Corre cada hora (no fixedRate — evita solapamiento si la ejecución tarda)
     @Scheduled(cron = "0 0 * * * *")
     @SchedulerLock(name = "cierre-automatico-scheduler", lockAtMostFor = "50m", lockAtLeastFor = "5m")
     public void cerrarRutasExcedidas() {
-        operacion.cerrarRutasExcedidas();
+        cerrarRutasExcedidas.ejecutar();
     }
 }
 ```
 
-- [ ] T433 [US7b] Implementar `OperacionCampoUseCase.cerrarRutasExcedidas()`:
-  - Query en `RutaRepositoryPort`: rutas en `EN_TRANSITO` con `fechaHoraInicio <= now() - 2 días`
-  - Para cada ruta: llamar `CierreRutaService.cerrarRuta(id, true, AUTOMATICO)` + notificar Despachador
+- [ ] T433 [US7b] Extender `RutaRepositoryPort` con:
+  ```java
+  List<Ruta> buscarRutasEnTransitoExcedidas(Instant fechaLimite);
+  // Query: estado = 'EN_TRANSITO' AND fecha_hora_inicio <= :fechaLimite
+  ```
 
 - [ ] T434 [US7b] Extender `RutaJpaRepository`:
   ```java
@@ -654,10 +717,10 @@ PLAN-00 Sprint 0 (Fundación hexagonal)
             └── PLAN-01 Sprint 2 (Rutas y planificación)
                     └── PLAN-02 Sprint 3 (Rutas CONFIRMADAS con conductor y vehículo)
                             └── Este plan — Sprint 4
-                                    ├── Phase 2 (Parada + adaptadores SQS/S3) — BLOQUEA todo
-                                    ├── Phase 3 (US6: consulta y tránsito)
-                                    ├── Phase 4 (US7a: registro de paradas)
-                                    ├── Phase 5 (US7b: cierre + scheduler)
+                                    ├── Phase 2 (Parada + SQS/S3) — BLOQUEA todo
+                                    ├── Phase 3 (ConsultarRutaActivaUseCase + IniciarTransitoUseCase)
+                                    ├── Phase 4 (RegistrarParadaUseCase)
+                                    ├── Phase 5 (CerrarRutaManualUseCase + ForzarCierreRutaUseCase + CerrarRutasExcedidasUseCase + Scheduler)
                                     └── Phase 6 (RutaCerradaEvent completo)
 ```
 

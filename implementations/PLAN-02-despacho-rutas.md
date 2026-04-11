@@ -32,30 +32,37 @@ El Despachador Logístico revisa las rutas en estado `LISTA_PARA_DESPACHO`, asig
 
 ```
 domain/
-└── port/
-    ├── in/
-    │   └── DespachoRouteUseCase.java     [existente — PLAN-00]
-    └── out/
-        ├── RutaRepositoryPort.java        [existente — PLAN-00, se extiende]
-        ├── VehiculoRepositoryPort.java    [existente — PLAN-00]
-        ├── ConductorRepositoryPort.java   [existente — PLAN-00]
-        ├── IntegracionModulo1Port.java    [existente — PLAN-00]
-        └── NotificacionDespachadorPort.java [existente — PLAN-00]
+├── model/
+│   ├── Ruta.java                            [existente — PLAN-00]
+│   ├── Vehiculo.java                        [existente — PLAN-00]
+│   ├── Conductor.java                       [existente — PLAN-00]
+│   └── Parada.java                          [existente — PLAN-00]
+└── exception/
+    ├── RutaNoEncontradaException.java       [existente — PLAN-00]
+    ├── VehiculoNoDisponibleException.java   [existente — PLAN-00]
+    └── ConductorNoDisponibleException.java  [existente — PLAN-00]
 
 application/
-└── despacho/
-    └── DespachoService.java             [NUEVO — implementa DespachoRouteUseCase]
+├── port/
+│   └── in/
+│       ├── ListarRutasParaDespachoPort.java [existente — PLAN-00]
+│       ├── ConfirmarDespachoPort.java       [existente — PLAN-00]
+│       └── ExcluirPaqueteRutaPort.java      [existente — PLAN-00]
+└── usecase/
+    ├── ListarRutasParaDespachoUseCase.java  [NUEVO — implements ListarRutasParaDespachoPort]
+    ├── ConfirmarDespachoUseCase.java        [NUEVO — implements ConfirmarDespachoPort]
+    └── ExcluirPaqueteRutaUseCase.java       [NUEVO — implements ExcluirPaqueteRutaPort]
 
 infrastructure/
 ├── adapter/
 │   └── in/
 │       └── web/
-│           └── DespachoController.java  [NUEVO]
+│           └── DespachoController.java     [NUEVO — inyecta los 3 puertos individuales]
 └── dto/
     ├── request/
-    │   └── ConfirmarDespachoRequest.java [NUEVO]
+    │   └── ConfirmarDespachoRequest.java   [NUEVO]
     └── response/
-        └── RutaDetalleResponse.java      [NUEVO]
+        └── RutaDetalleResponse.java        [NUEVO]
 ```
 
 ---
@@ -64,9 +71,9 @@ infrastructure/
 
 > **Dependencia bloqueante:** PLAN-01 Sprint 2 completo. Debe haber rutas en estado `LISTA_PARA_DESPACHO`.
 
-- [ ] T201 Verificar que existen rutas en estado `LISTA_PARA_DESPACHO` en BD
-- [ ] T202 Verificar que `VehiculoRepositoryPort` y `ConductorRepositoryPort` tienen métodos para buscar por estado
-- [ ] T203 Verificar que `DespachoRouteUseCase` está definida en `application/port/in/`
+- [ ] T201 Verificar que existen rutas en estado `LISTA_PARA_DESPACHO` en BD (PLAN-01 completo)
+- [ ] T202 Verificar que `VehiculoRepositoryPort` y `ConductorRepositoryPort` tienen métodos para buscar por estado (PLAN-03 completo)
+- [ ] T203 Verificar que `ListarRutasParaDespachoPort`, `ConfirmarDespachoPort` y `ExcluirPaqueteRutaPort` están definidos en `application/port/in/` (PLAN-00 completo)
 
 ---
 
@@ -97,47 +104,48 @@ infrastructure/
 
 ### Tests (TDD)
 
-- [ ] T207 [P] [US2] `DespachoServiceTest` — listar rutas para despacho:
-  - `DespachoService.listarRutasParaDespacho()` delega a `RutaRepositoryPort.buscarPorEstado(LISTA_PARA_DESPACHO)`
+- [ ] T207 [P] [US2] `ListarRutasParaDespachoUseCaseTest` — listar rutas para despacho:
+  - `ListarRutasParaDespachoUseCase.ejecutar()` delega a `RutaRepositoryPort.buscarPorEstado(LISTA_PARA_DESPACHO)`
   - Lista vacía cuando no hay rutas en ese estado
 
-- [ ] T208 [P] [US2] `DespachoServiceTest` — confirmación exitosa:
+- [ ] T208 [P] [US2] `ConfirmarDespachoUseCaseTest` — confirmación exitosa:
   - Dado: ruta `LISTA_PARA_DESPACHO`, conductor `ACTIVO` y vehículo `DISPONIBLE` del tipo requerido
-  - Cuando: `confirmarDespacho(rutaId, command)` con `conductorId` y `vehiculoId` en el command
+  - Cuando: `ConfirmarDespachoUseCase.ejecutar(rutaId, command)` con `conductorId` y `vehiculoId` en el command
   - Entonces: ruta `CONFIRMADA`, vehículo → `EN_TRANSITO`, conductor → `EN_RUTA`
 
-- [ ] T209 [P] [US2] `DespachoServiceTest` — bloqueado si conductor no `ACTIVO`:
+- [ ] T209 [P] [US2] `ConfirmarDespachoUseCaseTest` — bloqueado si conductor no `ACTIVO`:
   - Dado: conductorId referencia a conductor con estado `INACTIVO`
-  - Entonces: lanza excepción con mensaje claro. Ruta no cambia de estado.
+  - Entonces: lanza `ConductorNoDisponibleException`. Ruta no cambia de estado.
 
-- [ ] T210 [P] [US2] `DespachoServiceTest` — bloqueado si vehículo no `DISPONIBLE`:
+- [ ] T210 [P] [US2] `ConfirmarDespachoUseCaseTest` — bloqueado si vehículo no `DISPONIBLE`:
   - Dado: vehiculoId referencia a vehículo con estado `EN_TRANSITO`
-  - Entonces: lanza excepción con mensaje claro. Ruta no cambia de estado.
+  - Entonces: lanza `VehiculoNoDisponibleException`. Ruta no cambia de estado.
 
-- [ ] T211 [US2] `DespachoServiceTest` — exclusión de paquete antes de confirmar:
-  - `excluirPaquete(rutaId, paqueteId, motivo)` → parada queda marcada con estado `EXCLUIDA_DESPACHO` + motivo. `IntegracionModulo1Port.publishPaqueteExcluidoDespacho()` llamado. Ruta sigue en `LISTA_PARA_DESPACHO`.
+- [ ] T211 [US2] `ExcluirPaqueteRutaUseCaseTest` — exclusión de paquete antes de confirmar:
+  - `ExcluirPaqueteRutaUseCase.ejecutar(rutaId, paqueteId, motivo)` → parada queda marcada con estado `EXCLUIDA_DESPACHO`. `IntegracionModulo1Port.publishPaqueteExcluidoDespacho()` llamado. Ruta sigue en `LISTA_PARA_DESPACHO`.
 
-- [ ] T212 [US2] `DespachoServiceTest` — optimización de paradas:
+- [ ] T212 [US2] `ConfirmarDespachoUseCaseTest` — optimización de paradas:
   - `optimizarOrdenParadas(paradas)` ordena la lista por nearest-neighbor desde el punto de origen. Verifica que el orden resultante tiene menor distancia total que el orden original.
 
 ### Implementación
 
-- [ ] T213 [P] [US2] Implementar `DespachoService implements DespachoRouteUseCase`:
+- [ ] T213 [P] [US2] Implementar `ConfirmarDespachoUseCase implements ConfirmarDespachoPort`:
 
 ```java
+// application/usecase/ConfirmarDespachoUseCase.java
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class DespachoService implements DespachoRouteUseCase {
+public class ConfirmarDespachoUseCase implements ConfirmarDespachoPort {
 
     private final RutaRepositoryPort rutaRepository;
     private final VehiculoRepositoryPort vehiculoRepository;
     private final ConductorRepositoryPort conductorRepository;
+    private final ParadaRepositoryPort paradaRepository;
     private final IntegracionModulo1Port integracionM1;
-    private final NotificacionDespachadorPort notificacion;
 
     @Override
-    public Ruta confirmarDespacho(UUID rutaId, ConfirmarDespachoCommand command) {
+    public Ruta ejecutar(UUID rutaId, ConfirmarDespachoCommand command) {
         Ruta ruta = rutaRepository.buscarPorId(rutaId)
             .orElseThrow(() -> new RutaNoEncontradaException(rutaId));
 
@@ -150,9 +158,11 @@ public class DespachoService implements DespachoRouteUseCase {
             .filter(v -> v.tipo() == ruta.tipoVehiculoRequerido())
             .orElseThrow(() -> new VehiculoNoDisponibleException(command.vehiculoId()));
 
-        List<Parada> paradasOrdenadas = optimizarOrdenParadas(ruta.paradas());
+        List<Parada> paradas = paradaRepository.buscarPorRutaId(rutaId);
+        List<Parada> paradasOrdenadas = optimizarOrdenParadas(paradas);
+        paradaRepository.guardarTodas(paradasOrdenadas);
 
-        ruta.confirmar(conductor.id(), vehiculo.id(), paradasOrdenadas);
+        ruta.confirmar(conductor.id(), vehiculo.id());
         vehiculo.marcarEnTransito();
         conductor.marcarEnRuta();
 
@@ -166,8 +176,47 @@ public class DespachoService implements DespachoRouteUseCase {
     private List<Parada> optimizarOrdenParadas(List<Parada> paradas) {
         // Algoritmo nearest-neighbor: O(n²) — suficiente para n < 50 paradas por ruta
         // Punto de inicio: centroide de la zona o primera parada
-        // Para optimización futura: TSP con Lin-Kernighan
         // ...
+    }
+}
+```
+
+- [ ] T213b [US2] Implementar `ListarRutasParaDespachoUseCase implements ListarRutasParaDespachoPort`:
+
+```java
+// application/usecase/ListarRutasParaDespachoUseCase.java
+@Service
+@RequiredArgsConstructor
+public class ListarRutasParaDespachoUseCase implements ListarRutasParaDespachoPort {
+
+    private final RutaRepositoryPort rutaRepository;
+
+    @Override
+    public List<Ruta> ejecutar() {
+        return rutaRepository.buscarPorEstado(EstadoRuta.LISTA_PARA_DESPACHO);
+    }
+}
+```
+
+- [ ] T213c [US2] Implementar `ExcluirPaqueteRutaUseCase implements ExcluirPaqueteRutaPort`:
+
+```java
+// application/usecase/ExcluirPaqueteRutaUseCase.java
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class ExcluirPaqueteRutaUseCase implements ExcluirPaqueteRutaPort {
+
+    private final ParadaRepositoryPort paradaRepository;
+    private final IntegracionModulo1Port integracionM1;
+
+    @Override
+    public void ejecutar(UUID rutaId, UUID paqueteId, String motivo) {
+        Parada parada = paradaRepository.buscarPorRutaYPaquete(rutaId, paqueteId)
+            .orElseThrow(() -> new ParadaNoEncontradaException(paqueteId));
+        parada.marcarExcluidaDespacho(motivo);
+        paradaRepository.guardar(parada);
+        integracionM1.publishPaqueteExcluidoDespacho(paqueteId, rutaId, Instant.now());
     }
 }
 ```
@@ -192,24 +241,39 @@ public class DespachoService implements DespachoRouteUseCase {
 @RequiredArgsConstructor
 public class DespachoController {
 
-    private final DespachoRouteUseCase despacho;
+    // Cada campo inyecta el puerto individual que necesita — SRP en el controller
+    private final ListarRutasParaDespachoPort listarRutas;
+    private final ConfirmarDespachoPort confirmarDespacho;
+    private final ExcluirPaqueteRutaPort excluirPaquete;
+    private final ForzarCierreRutaPort forzarCierre;  // viene de PLAN-04
 
     @GetMapping("/rutas")
-    public List<RutaDetalleResponse> listarRutasParaDespacho() { ... }
-
-    @GetMapping("/rutas/{id}")
-    public RutaDetalleResponse detalle(@PathVariable UUID id) { ... }
+    public List<RutaDetalleResponse> listarRutasParaDespacho() {
+        return listarRutas.ejecutar().stream().map(RutaDetalleResponse::from).toList();
+    }
 
     @PostMapping("/rutas/{id}/confirmar")
-    public RutaDetalleResponse confirmarDespacho(
+    public RutaDetalleResponse confirmar(
             @PathVariable UUID id,
-            @Valid @RequestBody ConfirmarDespachoRequest request) { ... }
+            @Valid @RequestBody ConfirmarDespachoRequest request) {
+        Ruta ruta = confirmarDespacho.ejecutar(id, request.toCommand());
+        return RutaDetalleResponse.from(ruta);
+    }
 
     @DeleteMapping("/rutas/{id}/paquetes/{paqueteId}")
-    public void excluirPaquete(
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void excluir(
             @PathVariable UUID id,
             @PathVariable UUID paqueteId,
-            @RequestParam String motivo) { ... }
+            @RequestParam String motivo) {
+        excluirPaquete.ejecutar(id, paqueteId, motivo);
+    }
+
+    @PostMapping("/rutas/{id}/forzar-cierre")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void forzarCierre(@PathVariable UUID id) {
+        forzarCierre.ejecutar(id);
+    }
 }
 ```
 
