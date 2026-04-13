@@ -1,0 +1,45 @@
+# ─── Perfil TEST ───────────────────────────────────────────────────────────────
+# Usa Testcontainers para PostgreSQL (sin configuración manual de BD).
+# Redis usa un mock embedido de ShedLock; SQS se mockea con @MockBean.
+
+spring:
+  datasource:
+    # Testcontainers JDBC URL — levanta postgres:15 automáticamente
+    url: jdbc:tc:postgresql:15:///logistics_routes_test?TC_INITSCRIPT=file:src/test/resources/init.sql
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    hikari:
+      maximum-pool-size: 2
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+    validate-on-migrate: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6370  # puerto diferente para evitar colisión — se mockea en tests
+
+spring.cloud.aws:
+  credentials:
+    access-key: test
+    secret-key: test
+  region:
+    static: us-east-1
+  sqs:
+    endpoint: http://localhost:4566
+
+app:
+  jwt:
+    secret: test-secret-key-32-chars-minimum-padding-ok
+    expiration-ms: 3600000   # 1h
+
+logging:
+  level:
+    com.logistics.routes: DEBUG
+    org.springframework.security: WARN
+    org.flywaydb: INFO

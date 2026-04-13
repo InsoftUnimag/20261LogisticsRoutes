@@ -1,0 +1,48 @@
+# ─── Perfil PROD ───────────────────────────────────────────────────────────────
+# Todas las credenciales llegan por variables de entorno.
+# NO hardcodear secretos aquí.
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    show-sql: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL:false}
+
+# Spring Cloud AWS — usa la cadena de credenciales estándar de AWS (IAM role en EC2/ECS)
+spring.cloud.aws:
+  region:
+    static: ${AWS_REGION:us-east-1}
+  # Sin access-key/secret-key: se resuelve con IAM role o variables de entorno AWS_*
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  sqs:
+    solicitudes-ruta-queue: ${SQS_SOLICITUDES_RUTA_QUEUE}
+    eventos-paquete-queue: ${SQS_EVENTOS_PAQUETE_QUEUE}
+    cierre-ruta-queue: ${SQS_CIERRE_RUTA_QUEUE}
+
+logging:
+  level:
+    com.logistics.routes: INFO
+    org.springframework.security: WARN
+    org.flywaydb: INFO
