@@ -13,6 +13,14 @@ El Despachador Logístico revisa las rutas en estado `LISTA_PARA_DESPACHO`, asig
 
 ---
 
+## Eventos de Integración (SPEC-08)
+
+| # SPEC-08 | Evento | Receptor | Disparador | Caso de uso | Puerto de salida |
+|---|---|---|---|---|---|
+| 9 | `PAQUETE_EXCLUIDO_DESPACHO` | Módulo 1 | Despachador excluye parada antes de confirmar | `ExcluirPaqueteRutaUseCase` | `IntegracionModulo1Port.publishPaqueteExcluidoDespacho()` |
+
+---
+
 ## Technical Context
 
 | Campo | Valor |
@@ -79,20 +87,11 @@ infrastructure/
 
 ## Phase 2: Puertos de salida — extensión de repositorios
 
-- [ ] T204 [P] Extender `VehiculoRepositoryPort` con:
-  ```java
-  Optional<Vehiculo> buscarDisponiblePorTipo(TipoVehiculo tipo);
-  ```
-- [ ] T205 [P] Extender `ConductorRepositoryPort` con:
-  ```java
-  Optional<Conductor> buscarActivo();
-  // O mejor: que el comando ConfirmarDespacho traiga conductorId y vehiculoId explícitos del Despachador
-  ```
 - [ ] T206 [P] Extender `RutaRepositoryPort` con:
   ```java
   List<Ruta> buscarPorEstado(EstadoRuta estado);
-  void excluirPaquete(UUID rutaId, UUID paqueteId);
   ```
+  > **Nota:** `buscarDisponiblePorTipo()` y `buscarActivo()` fueron removidos — `ConfirmarDespachoUseCase` recibe `conductorId` y `vehiculoId` explícitos desde el command (el Despachador los elige en UI). `excluirPaquete()` fue removido — `ExcluirPaqueteRutaUseCase` opera directamente sobre `ParadaRepositoryPort`, no sobre `RutaRepositoryPort`.
 
 ---
 

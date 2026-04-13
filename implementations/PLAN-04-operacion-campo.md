@@ -17,6 +17,19 @@ Este plan cubre la experiencia completa del conductor en campo: consulta de la r
 
 ---
 
+## Eventos de Integración (SPEC-08)
+
+| # SPEC-08 | Evento | Receptor | Disparador | Caso de uso | Puerto de salida |
+|---|---|---|---|---|---|
+| 3 | `PAQUETE_EN_TRANSITO` | Módulo 1 | Conductor confirma inicio de tránsito | `IniciarTransitoUseCase` | `IntegracionModulo1Port.publishPaqueteEnTransito()` |
+| 4 | `PAQUETE_ENTREGADO` | Módulo 1 | Conductor registra entrega exitosa con POD | `RegistrarParadaUseCase` | `IntegracionModulo1Port.publishPaqueteEntregado()` |
+| 5 | `PARADA_FALLIDA` | Módulo 1 | Conductor registra parada fallida | `RegistrarParadaUseCase` | `IntegracionModulo1Port.publishParadaFallida()` |
+| 6 | `NOVEDAD_GRAVE` | Módulo 1 | Conductor registra paquete dañado/extraviado/devolución | `RegistrarParadaUseCase` | `IntegracionModulo1Port.publishNovedadGrave()` |
+| 7 | `PARADAS_SIN_GESTIONAR` | Módulo 1 | Ruta cerrada con paradas pendientes | `CerrarRutaManualUseCase` / `ForzarCierreRutaUseCase` / `CerrarRutasExcedidasUseCase` | `IntegracionModulo1Port.publishParadasSinGestionar()` |
+| 8 | `RUTA_CERRADA` | Módulo 3 | Cierre de ruta (manual, automático o forzado) | `CerrarRutaManualUseCase` (lógica compartida `cerrar()`) | `IntegracionModulo3Port.publishRutaCerrada()` |
+
+---
+
 ## Technical Context
 
 | Campo | Valor |
@@ -172,6 +185,8 @@ public class Parada {
   List<Parada> buscarPorRutaId(UUID rutaId);
   List<Parada> buscarPendientesPorRutaId(UUID rutaId);
   Parada guardar(Parada parada);
+  Optional<Parada> buscarPorRutaYPaquete(UUID rutaId, UUID paqueteId); // usada en RegistrarParadaUseCase y ExcluirPaqueteRutaUseCase
+  void guardarTodas(List<Parada> paradas);                             // usada en ConfirmarDespachoUseCase y CerrarRutaManualUseCase
   ```
 
 ### Adaptadores SQS (reemplazan IntegracionExternaService)
@@ -191,14 +206,18 @@ public class SqsIntegracionModulo1Adapter implements IntegracionModulo1Port {
 
     @Override
     public void publishPaqueteEnTransito(UUID paqueteId, UUID rutaId, Instant fechaHoraEvento) {
-        String payload = objectMapper.writeValueAsString(Map.of(
-            "tipo_evento", "PAQUETE_EN_TRANSITO",
-            "paquete_id", paqueteId,
-            "ruta_id", rutaId,
-            "fecha_hora_evento", fechaHoraEvento
-        ));
-        sqsTemplate.send(eventosPaqueteQueue, payload);
-        log.info("Published PAQUETE_EN_TRANSITO for paquete={}", paqueteId);
+        try {
+            String payload = objectMapper.writeValueAsString(Map.of(
+                "tipo_evento", "PAQUETE_EN_TRANSITO",
+                "paquete_id", paqueteId,
+                "ruta_id", rutaId,
+                "fecha_hora_evento", fechaHoraEvento
+            ));
+            sqsTemplate.send(eventosPaqueteQueue, payload);
+            log.info("Published PAQUETE_EN_TRANSITO for paquete={}", paqueteId);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error serializando evento SQS PAQUETE_EN_TRANSITO", e);
+        }
     }
 
     @Override
@@ -524,7 +543,8 @@ public class CerrarRutaManualUseCase implements CerrarRutaManualPort {
         List<Parada> pendientes = paradaRepository.buscarPendientesPorRutaId(rutaId);
 
         if (!pendientes.isEmpty() && !confirmarConPendientes) {
-            return CierreRutaResult.conPendientes(pendientes);
+            throw new ParadasPendientesException(pendientes);
+            // GlobalExceptionHandler mapea → HTTP 409 Conflict con lista de paqueteIds pendientes
         }
 
         if (!pendientes.isEmpty()) {
@@ -622,13 +642,13 @@ public class CerrarRutasExcedidasUseCase implements CerrarRutasExcedidasPort {
 @RequiredArgsConstructor
 public class CierreAutomaticoScheduler {
 
-    private final CerrarRutasExcedidasPort cerrarRutasExcedidas; // ← puerto individual
+    private final CerrarRutasExcedidasPort cerrarRutasExcedidasPort; // ← puerto individual
 
     // Corre cada hora (no fixedRate — evita solapamiento si la ejecución tarda)
     @Scheduled(cron = "0 0 * * * *")
     @SchedulerLock(name = "cierre-automatico-scheduler", lockAtMostFor = "50m", lockAtLeastFor = "5m")
-    public void cerrarRutasExcedidas() {
-        cerrarRutasExcedidas.ejecutar();
+    public void ejecutarCierresAutomaticos() {
+        cerrarRutasExcedidasPort.ejecutar();
     }
 }
 ```

@@ -114,7 +114,8 @@ src/main/java/com/logistics/routes/
 │       ├── FechaLimiteVencidaException.java
 │       ├── PlacaDuplicadaException.java
 │       ├── ParadaNoEncontradaException.java
-│       └── ParadaSinPODException.java
+│       ├── ParadaSinPODException.java
+│       └── ParadasPendientesException.java  ← lanzada por cerrar() cuando hay paradas pendientes y confirmarConPendientes=false
 │
 ├── application/                         ← Implementaciones puras de negocio orientadas a Casos de Uso (SRP)
 │   ├── port/
@@ -450,7 +451,7 @@ interface NotificacionDespachadorPort {
 - [ ] T007 Crear todos los enums de dominio: `EstadoRuta`, `TipoVehiculo` (con `siguienteTipo()` y `capacidadKg()`), `EstadoVehiculo`, `EstadoConductor`, `EstadoParada`, `MotivoNovedad`, `ModeloContrato`, `OrigenParada`, `TipoCierre`
 - [ ] T008 Crear `ZonaGeografica` record inmutable con `GeoHash.geoHashStringWithCharacterPrecision(lat, lon, 5)`
 - [ ] T009 Crear entidades de dominio como POJOs (sin anotaciones JPA): `Ruta`, `Vehiculo`, `Conductor`, `Parada`, `HistorialAsignacion`
-- [ ] T010 Crear jerarquía de excepciones de dominio: `RutaNoEncontradaException`, `RutaNoEnTransitoException`, `VehiculoEnTransitoException`, `VehiculoNoDisponibleException`, `ConductorYaAsignadoException`, `ConductorNoDisponibleException`, `FechaLimiteVencidaException`, `PlacaDuplicadaException`, `ParadaNoEncontradaException`, `ParadaSinPODException`
+- [ ] T010 Crear jerarquía de excepciones de dominio: `RutaNoEncontradaException`, `RutaNoEnTransitoException`, `VehiculoEnTransitoException`, `VehiculoNoDisponibleException`, `ConductorYaAsignadoException`, `ConductorNoDisponibleException`, `FechaLimiteVencidaException`, `PlacaDuplicadaException`, `ParadaNoEncontradaException`, `ParadaSinPODException`, `ParadasPendientesException`
 
 ### F0.4 — Capa de aplicación (puertos y casos de uso)
 - [ ] T011b Crear las 21 interfaces de `application/port/in/` (una por acción, 1 método `ejecutar`): `SolicitarRutaPort`, `DespacharManualPort`, `ProcesarRutasVencidasPort`, `ListarRutasParaDespachoPort`, `ConfirmarDespachoPort`, `ExcluirPaqueteRutaPort`, `RegistrarVehiculoPort`, `ActualizarVehiculoPort`, `DarDeBajaVehiculoPort`, `ConsultarDisponibilidadFlotaPort`, `RegistrarConductorPort`, `AsignarVehiculoConductorPort`, `DesvincularVehiculoConductorPort`, `DarDeBajaConductorPort`, `ConsultarHistorialConductorPort`, `ConsultarRutaActivaPort`, `IniciarTransitoPort`, `RegistrarParadaPort`, `CerrarRutaManualPort`, `ForzarCierreRutaPort`, `CerrarRutasExcedidasPort`
