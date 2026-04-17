@@ -55,3 +55,13 @@ app:
     solicitudes-ruta-queue: solicitudes-ruta-queue
     eventos-paquete-queue: eventos-paquete-queue
     cierre-ruta-queue: cierre-ruta-queue
+
+# Formato de logs con contexto MDC de trazabilidad
+# Variables disponibles: %X{request_id} %X{ruta_id} %X{conductor_id} %X{user_email}
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level [req:%X{request_id}] [ruta:%X{ruta_id}] [cond:%X{conductor_id}] %logger{30} - %msg%n"
+  level:
+    com.logistics.routes: INFO
+    org.springframework.security: WARN
+    org.flywaydb: INFO
