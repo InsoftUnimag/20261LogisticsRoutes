@@ -94,6 +94,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja excepciones de autenticación (como BadCredentialsException) que ocurren
+     * explícitamente en los endpoints públicos, como el /login.
+     * Retorna 401 Unauthorized.
+     */
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse handleAuthenticationException(org.springframework.security.core.AuthenticationException ex) {
+        log.warn("Error de autenticación: {}", ex.getMessage());
+        return ErrorResponse.of("UNAUTHORIZED", "Credenciales inválidas");
+    }
+
+    /**
      * Fallback genérico para cualquier RuntimeException no mapeada explícitamente.
      * Retorna 500 Internal Server Error y loguea el stack trace completo para análisis.
      *
