@@ -1,25 +1,31 @@
 # ─── Perfil DEV ────────────────────────────────────────────────────────────────
-# Apunta a PostgreSQL local y LocalStack para SQS.
-# Requiere: Docker con postgres:15 y localstack/localstack corriendo.
+# Apunta al PostgreSQL y Redis del docker-compose.yml local.
+# Credenciales leídas desde .env (nunca hardcodeadas).
+# Requiere: docker compose up -d
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/logistics_routes_dev
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:logistics_routes_dev}
+    username: ${DB_USER:logistics_user}
+    password: ${DB_PASSWORD:logistics_dev_pwd}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
       minimum-idle: 2
 
   jpa:
-    show-sql: true
+    hibernate:
+      ddl-auto: validate          # Flyway es la única fuente de verdad — nunca update/create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: false
 
   data:
     redis:
-      host: localhost
-      port: 6379
-      # sin password en dev local
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
 # Spring Cloud AWS — apunta a LocalStack
 spring.cloud.aws:
