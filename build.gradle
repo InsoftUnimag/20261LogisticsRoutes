@@ -1,0 +1,84 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.logistics'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    springCloudAwsVersion  = '3.2.1'
+    shedlockVersion        = '5.16.0'
+    jjwtVersion            = '0.12.6'
+    springdocVersion       = '2.7.0'
+    geohashVersion         = '1.4.0'
+}
+
+dependencies {
+
+    // ── Spring Boot Core ──────────────────────────────────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // ── Base de Datos ─────────────────────────────────────────────────
+    runtimeOnly  'org.postgresql:postgresql'
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'   // requerido Flyway 10+
+
+    // ── Lombok ────────────────────────────────────────────────────────
+    compileOnly          'org.projectlombok:lombok'
+    annotationProcessor  'org.projectlombok:lombok'
+
+    // ── AWS SQS (Spring Cloud AWS) ────────────────────────────────────
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
+
+    // ── GeoHash ───────────────────────────────────────────────────────
+    implementation "ch.hsr:geohash:${geohashVersion}"
+
+    // ── ShedLock (scheduler distribuido con Redis) ────────────────────
+    implementation "net.javacrumbs.shedlock:shedlock-spring:${shedlockVersion}"
+    implementation "net.javacrumbs.shedlock:shedlock-provider-redis-spring:${shedlockVersion}"
+
+    // ── JWT ───────────────────────────────────────────────────────────
+    implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
+    runtimeOnly    "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
+    runtimeOnly    "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
+
+    // ── OpenAPI / Swagger UI ──────────────────────────────────────────
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+
+    // ── Test ──────────────────────────────────────────────────────────
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "io.awspring.cloud:spring-cloud-aws-dependencies:${springCloudAwsVersion}"
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
