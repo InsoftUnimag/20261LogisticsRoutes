@@ -51,7 +51,7 @@ dependencies {
     annotationProcessor  'org.projectlombok:lombok'
 
     // ── AWS SQS (Spring Cloud AWS) ────────────────────────────────────
-   // implementation "io.awspring.cloud:spring-cloud-aws-sqs-starter:${springCloudAwsVersion}"
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
 
     // ── GeoHash ───────────────────────────────────────────────────────
     implementation "ch.hsr:geohash:${geohashVersion}"
@@ -73,6 +73,11 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "io.awspring.cloud:spring-cloud-aws-dependencies:${springCloudAwsVersion}"
+    }
+}
 
 tasks.named('test') {
     useJUnitPlatform()
