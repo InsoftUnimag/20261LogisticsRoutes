@@ -1,0 +1,30 @@
+# Override para tests de integración con Testcontainers.
+# El datasource URL/user/password lo inyecta @DynamicPropertySource en cada test.
+
+app:
+  jwt:
+    secret: dGVzdC1zZWNyZXQta2V5LXBhcmEtaW50ZWdyYXRpb24tdGVzdHMtMjAyNi1sb2dpc3RpY3M=
+    expiration-ms: 3600000
+
+spring:
+  autoconfigure:
+    exclude:
+      - io.awspring.cloud.autoconfigure.sqs.SqsAutoConfiguration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    validate-on-migrate: true
+  data:
+    redis:
+      host: localhost
+      port: 6370        # puerto improbable — conexión falla lazily, no en startup
+
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    org.springframework.web: INFO
+    com.logistics.routes: INFO
+    org.flywaydb: INFO
