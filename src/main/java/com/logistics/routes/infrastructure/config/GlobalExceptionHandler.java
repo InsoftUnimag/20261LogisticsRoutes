@@ -1,6 +1,11 @@
 package com.logistics.routes.infrastructure.config;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.logistics.routes.domain.exception.DominioException;
+import com.logistics.routes.domain.exception.PlacaDuplicadaException;
+import com.logistics.routes.domain.exception.VehiculoEnTransitoException;
+import com.logistics.routes.domain.exception.VehiculoNoDisponibleException;
+import com.logistics.routes.domain.exception.VehiculoNoEncontradoException;
 import com.logistics.routes.infrastructure.dto.response.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +14,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -35,6 +41,42 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    // ── Excepciones de dominio ────────────────────────────────────────────────
+
+    @ExceptionHandler(PlacaDuplicadaException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handlePlacaDuplicada(PlacaDuplicadaException ex) {
+        return ErrorResponse.of("PLACA_DUPLICADA", ex.getMessage());
+    }
+
+    @ExceptionHandler(VehiculoEnTransitoException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleVehiculoEnTransito(VehiculoEnTransitoException ex) {
+        return ErrorResponse.of("VEHICULO_EN_TRANSITO", ex.getMessage());
+    }
+
+    @ExceptionHandler(VehiculoNoEncontradoException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleVehiculoNoEncontrado(VehiculoNoEncontradoException ex) {
+        return ErrorResponse.of("VEHICULO_NO_ENCONTRADO", ex.getMessage());
+    }
+
+    @ExceptionHandler(VehiculoNoDisponibleException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleVehiculoNoDisponible(VehiculoNoDisponibleException ex) {
+        return ErrorResponse.of("VEHICULO_NO_DISPONIBLE", ex.getMessage());
+    }
+
+    /** Fallback para cualquier excepción de dominio no mapeada explícitamente. */
+    @ExceptionHandler(DominioException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleDominioException(DominioException ex) {
+        log.warn("Excepción de dominio no mapeada: {}", ex.getMessage());
+        return ErrorResponse.of("DOMINIO_ERROR", ex.getMessage());
+    }
+
+    // ── Validaciones y errores HTTP ───────────────────────────────────────────
+
     /**
      * Maneja fallos de validación de @Valid/@Validated en los request bodies.
      * Retorna 422 con la lista detallada de campos inválidos.
@@ -55,6 +97,23 @@ public class GlobalExceptionHandler {
                 "El cuerpo de la solicitud contiene campos inválidos",
                 detalles
         );
+    }
+
+    /**
+     * Maneja path variables o query params cuyo valor no puede convertirse
+     * al tipo esperado (ej: UUID mal formado, enum con valor inválido).
+     * Retorna 400 Bad Request.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String requiredType = ex.getRequiredType() != null
+                ? ex.getRequiredType().getSimpleName()
+                : "desconocido";
+        String detalle = "Valor inválido '%s' para el parámetro '%s'. Se esperaba tipo %s."
+                .formatted(ex.getValue(), ex.getName(), requiredType);
+        log.warn("Type mismatch en parámetro: {}", detalle);
+        return ErrorResponse.of("INVALID_PARAMETER", detalle);
     }
 
     /**
@@ -112,9 +171,9 @@ public class GlobalExceptionHandler {
      * <p>En producción estos errores deben ser corregidos — NO exponer detalles de la excepción
      * al cliente por razones de seguridad.
      */
-    @ExceptionHandler(RuntimeException.class)
+    @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse handleGenericRuntimeException(RuntimeException ex) {
+    public ErrorResponse handleGenericException(Exception ex) {
         log.error("Error inesperado no manejado: {}", ex.getMessage(), ex);
         return ErrorResponse.of(
                 "INTERNAL_ERROR",
