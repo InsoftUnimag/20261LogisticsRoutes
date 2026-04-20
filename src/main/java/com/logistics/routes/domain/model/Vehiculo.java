@@ -42,12 +42,7 @@ public class Vehiculo {
     public static Vehiculo nuevo(String placa, TipoVehiculo tipo, String modelo,
                                  double capacidadPesoKg, double volumenMaximoM3,
                                  ZonaGeografica zonaOperacion) {
-        if (capacidadPesoKg <= 0) {
-            throw new IllegalArgumentException("La capacidad de peso debe ser mayor a 0");
-        }
-        if (volumenMaximoM3 <= 0) {
-            throw new IllegalArgumentException("El volumen máximo debe ser mayor a 0");
-        }
+        validarInvariantes(placa, tipo, modelo, capacidadPesoKg, volumenMaximoM3);
         return new Vehiculo(UUID.randomUUID(), placa, tipo, modelo,
                 capacidadPesoKg, volumenMaximoM3, zonaOperacion.hash(),
                 EstadoVehiculo.DISPONIBLE, null);
@@ -55,15 +50,30 @@ public class Vehiculo {
 
     /** Factory para la capa de aplicación — construye desde el command. */
     public static Vehiculo nuevo(RegistrarVehiculoCommand command) {
-        if (command.capacidadPesoKg().doubleValue() <= 0) {
-            throw new IllegalArgumentException("La capacidad de peso debe ser mayor a 0");
-        }
-        if (command.volumenMaximoM3().doubleValue() <= 0) {
-            throw new IllegalArgumentException("El volumen máximo debe ser mayor a 0");
-        }
+        validarInvariantes(command.placa(), command.tipo(), command.modelo(),
+                command.capacidadPesoKg().doubleValue(), command.volumenMaximoM3().doubleValue());
         return new Vehiculo(UUID.randomUUID(), command.placa(), command.tipo(), command.modelo(),
                 command.capacidadPesoKg().doubleValue(), command.volumenMaximoM3().doubleValue(),
                 command.zonaOperacion(), EstadoVehiculo.DISPONIBLE, null);
+    }
+
+    private static void validarInvariantes(String placa, TipoVehiculo tipo, String modelo,
+                                           double capacidadPesoKg, double volumenMaximoM3) {
+        if (placa == null || placa.isBlank()) {
+            throw new IllegalArgumentException("La placa del vehículo es obligatoria");
+        }
+        if (tipo == null) {
+            throw new IllegalArgumentException("El tipo de vehículo es obligatorio");
+        }
+        if (modelo == null || modelo.isBlank()) {
+            throw new IllegalArgumentException("El modelo del vehículo es obligatorio");
+        }
+        if (capacidadPesoKg <= 0) {
+            throw new IllegalArgumentException("La capacidad de peso debe ser mayor a 0");
+        }
+        if (volumenMaximoM3 <= 0) {
+            throw new IllegalArgumentException("El volumen máximo debe ser mayor a 0");
+        }
     }
 
     /**
