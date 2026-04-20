@@ -32,6 +32,12 @@ public class Conductor {
                 EstadoConductor.ACTIVO, null);
     }
 
+    public static Conductor reconstituir(UUID id, String nombre, String email,
+                                         ModeloContrato modeloContrato, EstadoConductor estado,
+                                         UUID vehiculoAsignadoId) {
+        return new Conductor(id, nombre, email, modeloContrato, estado, vehiculoAsignadoId);
+    }
+
     public void asignarVehiculo(UUID vehiculoId) {
         if (vehiculoAsignadoId != null) {
             throw new ConductorYaAsignadoException(id.toString());

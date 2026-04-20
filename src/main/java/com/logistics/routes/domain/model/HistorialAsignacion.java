@@ -27,6 +27,12 @@ public class HistorialAsignacion {
                 Instant.now(), null, true);
     }
 
+    public static HistorialAsignacion reconstituir(UUID id, UUID conductorId, UUID vehiculoId,
+                                                   Instant fechaInicio, Instant fechaFin) {
+        return new HistorialAsignacion(id, conductorId, vehiculoId, fechaInicio, fechaFin,
+                fechaFin == null);
+    }
+
     public void cerrar() {
         this.fechaFin = Instant.now();
         this.activo = false;

@@ -1,7 +1,11 @@
 package com.logistics.routes.infrastructure.config;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.logistics.routes.domain.exception.ConductorNoDisponibleException;
+import com.logistics.routes.domain.exception.ConductorNoEncontradoException;
+import com.logistics.routes.domain.exception.ConductorYaAsignadoException;
 import com.logistics.routes.domain.exception.DominioException;
+import com.logistics.routes.domain.exception.EmailDuplicadoException;
 import com.logistics.routes.domain.exception.PlacaDuplicadaException;
 import com.logistics.routes.domain.exception.VehiculoEnTransitoException;
 import com.logistics.routes.domain.exception.VehiculoNoDisponibleException;
@@ -65,6 +69,30 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleVehiculoNoDisponible(VehiculoNoDisponibleException ex) {
         return ErrorResponse.of("VEHICULO_NO_DISPONIBLE", ex.getMessage());
+    }
+
+    @ExceptionHandler(ConductorNoEncontradoException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleConductorNoEncontrado(ConductorNoEncontradoException ex) {
+        return ErrorResponse.of("CONDUCTOR_NO_ENCONTRADO", ex.getMessage());
+    }
+
+    @ExceptionHandler(ConductorYaAsignadoException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleConductorYaAsignado(ConductorYaAsignadoException ex) {
+        return ErrorResponse.of("CONDUCTOR_YA_ASIGNADO", ex.getMessage());
+    }
+
+    @ExceptionHandler(ConductorNoDisponibleException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleConductorNoDisponible(ConductorNoDisponibleException ex) {
+        return ErrorResponse.of("CONDUCTOR_NO_DISPONIBLE", ex.getMessage());
+    }
+
+    @ExceptionHandler(EmailDuplicadoException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleEmailDuplicado(EmailDuplicadoException ex) {
+        return ErrorResponse.of("EMAIL_DUPLICADO", ex.getMessage());
     }
 
     /** Fallback para cualquier excepción de dominio no mapeada explícitamente. */
