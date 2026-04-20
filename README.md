@@ -73,5 +73,28 @@ Para que sea justo para el transportador y la empresa, el pago se pondera:
 | **Fallido (Culpa Transportador)** | 0% | Error de manipulación o logística del conductor. |
 | **Dañado en Ruta** | 0% + Penalidad | El seguro del transportador debe responder. |
 
+---
 
+## 🚀 Cómo correr el proyecto (Sprint 1)
 
+### Requisitos Previos
+* **Java 17** o superior.
+* **Docker y Docker Compose** (o Docker Desktop).
+* **PostgreSQL** instalado localmente o vía Docker si no quieres usar la DB embebida.
+
+### Ejecución de Pruebas (Tests)
+El proyecto utiliza **Testcontainers** para las pruebas de integración. Asegúrate de tener **Docker ejecutándose** antes de correr los tests.
+```bash
+./gradlew test
+```
+
+### Ejecutar la Aplicación Localmente
+1. Asegúrate de tener una base de datos PostgreSQL local corriendo en `localhost:5432` llamada `logistics_routes_dev` con usuario `postgres` y contraseña `postgres` (puedes ajustar esto en `application-dev.yml`).
+2. Corre el proyecto usando Gradle:
+```bash
+./gradlew bootRun --args='--spring.profiles.active=dev'
+```
+
+### Documentación API (Swagger)
+Una vez que la aplicación esté corriendo, puedes acceder a la documentación de los endpoints (y probarlos) en:
+* [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
