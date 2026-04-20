@@ -1,6 +1,5 @@
 package com.logistics.routes.application.usecase;
 
-import com.logistics.routes.application.port.in.ConsultarHistorialConductorPort;
 import com.logistics.routes.application.port.out.ConductorRepositoryPort;
 import com.logistics.routes.application.port.out.HistorialAsignacionRepositoryPort;
 import com.logistics.routes.domain.exception.ConductorNoEncontradoException;
@@ -15,12 +14,11 @@ import java.util.UUID;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class ConsultarHistorialConductorUseCase implements ConsultarHistorialConductorPort {
+public class ConsultarHistorialConductorUseCase {
 
     private final ConductorRepositoryPort conductorRepository;
     private final HistorialAsignacionRepositoryPort historialRepository;
 
-    @Override
     public List<HistorialAsignacion> ejecutar(UUID conductorId) {
         conductorRepository.buscarPorId(conductorId)
                 .orElseThrow(() -> new ConductorNoEncontradoException(conductorId));

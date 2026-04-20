@@ -1,6 +1,5 @@
 package com.logistics.routes.application.usecase;
 
-import com.logistics.routes.application.port.in.AsignarVehiculoConductorPort;
 import com.logistics.routes.application.port.out.ConductorRepositoryPort;
 import com.logistics.routes.application.port.out.HistorialAsignacionRepositoryPort;
 import com.logistics.routes.application.port.out.NotificacionDespachadorPort;
@@ -21,14 +20,13 @@ import java.util.UUID;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class AsignarVehiculoConductorUseCase implements AsignarVehiculoConductorPort {
+public class AsignarVehiculoConductorUseCase {
 
     private final ConductorRepositoryPort conductorRepository;
     private final VehiculoRepositoryPort vehiculoRepository;
     private final HistorialAsignacionRepositoryPort historialRepository;
     private final NotificacionDespachadorPort notificacion;
 
-    @Override
     public Conductor ejecutar(UUID conductorId, UUID vehiculoId) {
         Conductor conductor = conductorRepository.buscarPorId(conductorId)
                 .orElseThrow(() -> new ConductorNoEncontradoException(conductorId));
@@ -40,7 +38,6 @@ public class AsignarVehiculoConductorUseCase implements AsignarVehiculoConductor
             throw new VehiculoNoDisponibleException(vehiculoId.toString());
         }
 
-        // Reglas de dominio: lanza ConductorYaAsignadoException o ConductorNoDisponibleException
         conductor.asignarVehiculo(vehiculoId);
         vehiculo.asignarConductor(conductorId);
 
