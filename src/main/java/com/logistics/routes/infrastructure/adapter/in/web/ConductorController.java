@@ -1,10 +1,10 @@
 package com.logistics.routes.infrastructure.adapter.in.web;
 
-import com.logistics.routes.application.port.in.AsignarVehiculoConductorPort;
-import com.logistics.routes.application.port.in.ConsultarHistorialConductorPort;
-import com.logistics.routes.application.port.in.DarDeBajaConductorPort;
-import com.logistics.routes.application.port.in.DesvincularVehiculoConductorPort;
-import com.logistics.routes.application.port.in.RegistrarConductorPort;
+import com.logistics.routes.application.usecase.AsignarVehiculoConductorUseCase;
+import com.logistics.routes.application.usecase.ConsultarHistorialConductorUseCase;
+import com.logistics.routes.application.usecase.DarDeBajaConductorUseCase;
+import com.logistics.routes.application.usecase.DesvincularVehiculoConductorUseCase;
+import com.logistics.routes.application.usecase.RegistrarConductorUseCase;
 import com.logistics.routes.infrastructure.dto.request.AsignacionRequest;
 import com.logistics.routes.infrastructure.dto.request.ConductorRequest;
 import com.logistics.routes.infrastructure.dto.response.ConductorResponse;
@@ -30,16 +30,17 @@ import java.util.UUID;
 @Tag(name = "Conductores", description = "API de gestión de conductores y sus asignaciones")
 public class ConductorController {
 
-    private final RegistrarConductorPort registrarConductor;
-    private final AsignarVehiculoConductorPort asignarVehiculo;
-    private final DesvincularVehiculoConductorPort desvincularVehiculo;
-    private final DarDeBajaConductorPort darDeBajaConductor;
-    private final ConsultarHistorialConductorPort consultarHistorial;
+    private final RegistrarConductorUseCase registrarConductor;
+    private final AsignarVehiculoConductorUseCase asignarVehiculo;
+    private final DesvincularVehiculoConductorUseCase desvincularVehiculo;
+    private final DarDeBajaConductorUseCase darDeBajaConductor;
+    private final ConsultarHistorialConductorUseCase consultarHistorial;
 
-    @Operation(summary = "Registrar un nuevo conductor", description = "Registra un conductor en la plataforma. Requiere rol FLEET_ADMIN.")
+    @Operation(summary = "Registrar un nuevo conductor")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Conductor registrado exitosamente"),
-            @ApiResponse(responseCode = "400", description = "Datos de petición inválidos")
+            @ApiResponse(responseCode = "409", description = "Email ya registrado"),
+            @ApiResponse(responseCode = "422", description = "Datos de petición inválidos")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -47,11 +48,11 @@ public class ConductorController {
         return ConductorResponse.from(registrarConductor.ejecutar(request.toCommand()));
     }
 
-    @Operation(summary = "Asignar vehículo a conductor", description = "Asigna un vehículo a un conductor, creando un nuevo historial de asignación. Requiere rol FLEET_ADMIN o DISPATCHER.")
+    @Operation(summary = "Asignar vehículo a conductor")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Asignación exitosa"),
             @ApiResponse(responseCode = "404", description = "Conductor o vehículo no encontrado"),
-            @ApiResponse(responseCode = "409", description = "Conductor o vehículo no disponible para asignación")
+            @ApiResponse(responseCode = "409", description = "Conductor o vehículo no disponible")
     })
     @PostMapping("/{id}/asignacion")
     @PreAuthorize("hasAnyRole('FLEET_ADMIN', 'DISPATCHER')")
@@ -60,11 +61,10 @@ public class ConductorController {
         return ConductorResponse.from(asignarVehiculo.ejecutar(id, request.vehiculoId()));
     }
 
-    @Operation(summary = "Desvincular vehículo de conductor", description = "Desvincula al conductor de su vehículo actual y cierra el historial de asignación. Requiere rol FLEET_ADMIN o DISPATCHER.")
+    @Operation(summary = "Desvincular vehículo de conductor")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Desvinculación exitosa"),
-            @ApiResponse(responseCode = "404", description = "Conductor no encontrado"),
-            @ApiResponse(responseCode = "409", description = "Conductor no tiene vehículo asignado o está en ruta")
+            @ApiResponse(responseCode = "404", description = "Conductor no encontrado")
     })
     @DeleteMapping("/{id}/asignacion")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -73,11 +73,11 @@ public class ConductorController {
         desvincularVehiculo.ejecutar(id);
     }
 
-    @Operation(summary = "Dar de baja un conductor", description = "Marca un conductor como INACTIVO. Requiere rol FLEET_ADMIN.")
+    @Operation(summary = "Dar de baja un conductor")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Conductor dado de baja exitosamente"),
             @ApiResponse(responseCode = "404", description = "Conductor no encontrado"),
-            @ApiResponse(responseCode = "409", description = "Conductor está en ruta o tiene vehículo asignado")
+            @ApiResponse(responseCode = "409", description = "Conductor tiene vehículo asignado")
     })
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -85,7 +85,7 @@ public class ConductorController {
         darDeBajaConductor.ejecutar(id);
     }
 
-    @Operation(summary = "Consultar historial de asignaciones", description = "Obtiene el historial de asignaciones de vehículos de un conductor. Requiere rol FLEET_ADMIN o DISPATCHER.")
+    @Operation(summary = "Consultar historial de asignaciones")
     @ApiResponse(responseCode = "200", description = "Historial recuperado exitosamente")
     @GetMapping("/{id}/historial")
     @PreAuthorize("hasAnyRole('FLEET_ADMIN', 'DISPATCHER')")

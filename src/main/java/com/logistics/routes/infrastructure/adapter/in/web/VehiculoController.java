@@ -1,9 +1,9 @@
 package com.logistics.routes.infrastructure.adapter.in.web;
 
-import com.logistics.routes.application.port.in.ActualizarVehiculoPort;
-import com.logistics.routes.application.port.in.ConsultarDisponibilidadFlotaPort;
-import com.logistics.routes.application.port.in.DarDeBajaVehiculoPort;
-import com.logistics.routes.application.port.in.RegistrarVehiculoPort;
+import com.logistics.routes.application.usecase.ActualizarVehiculoUseCase;
+import com.logistics.routes.application.usecase.ConsultarDisponibilidadFlotaUseCase;
+import com.logistics.routes.application.usecase.DarDeBajaVehiculoUseCase;
+import com.logistics.routes.application.usecase.RegistrarVehiculoUseCase;
 import com.logistics.routes.infrastructure.dto.request.VehiculoRequest;
 import com.logistics.routes.infrastructure.dto.response.FlotaDisponibilidadResponse;
 import com.logistics.routes.infrastructure.dto.response.VehiculoResponse;
@@ -28,10 +28,10 @@ import java.util.UUID;
 @Tag(name = "Vehículos", description = "API de gestión de flota de vehículos")
 public class VehiculoController {
 
-    private final RegistrarVehiculoPort registrarVehiculo;
-    private final ActualizarVehiculoPort actualizarVehiculo;
-    private final DarDeBajaVehiculoPort darDeBajaVehiculo;
-    private final ConsultarDisponibilidadFlotaPort consultarDisponibilidad;
+    private final RegistrarVehiculoUseCase registrarVehiculo;
+    private final ActualizarVehiculoUseCase actualizarVehiculo;
+    private final DarDeBajaVehiculoUseCase darDeBajaVehiculo;
+    private final ConsultarDisponibilidadFlotaUseCase consultarDisponibilidad;
 
     @Operation(summary = "Registrar un nuevo vehículo", description = "Registra un vehículo en la flota. Requiere rol FLEET_ADMIN.")
     @ApiResponses({
