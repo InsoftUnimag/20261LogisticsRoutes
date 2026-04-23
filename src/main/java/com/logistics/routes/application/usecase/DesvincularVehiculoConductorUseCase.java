@@ -1,6 +1,5 @@
 package com.logistics.routes.application.usecase;
 
-import com.logistics.routes.application.port.in.DesvincularVehiculoConductorPort;
 import com.logistics.routes.application.port.out.ConductorRepositoryPort;
 import com.logistics.routes.application.port.out.HistorialAsignacionRepositoryPort;
 import com.logistics.routes.application.port.out.NotificacionDespachadorPort;
@@ -17,14 +16,13 @@ import java.util.UUID;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class DesvincularVehiculoConductorUseCase implements DesvincularVehiculoConductorPort {
+public class DesvincularVehiculoConductorUseCase {
 
     private final ConductorRepositoryPort conductorRepository;
     private final VehiculoRepositoryPort vehiculoRepository;
     private final HistorialAsignacionRepositoryPort historialRepository;
     private final NotificacionDespachadorPort notificacion;
 
-    @Override
     public Conductor ejecutar(UUID conductorId) {
         Conductor conductor = conductorRepository.buscarPorId(conductorId)
                 .orElseThrow(() -> new ConductorNoEncontradoException(conductorId));

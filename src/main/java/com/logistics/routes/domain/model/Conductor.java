@@ -28,6 +28,15 @@ public class Conductor {
     }
 
     public static Conductor nuevo(String nombre, String email, ModeloContrato modeloContrato) {
+        if (nombre == null || nombre.isBlank()) {
+            throw new IllegalArgumentException("El nombre del conductor es obligatorio");
+        }
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("El email del conductor es obligatorio");
+        }
+        if (modeloContrato == null) {
+            throw new IllegalArgumentException("El modelo de contrato es obligatorio");
+        }
         return new Conductor(UUID.randomUUID(), nombre, email, modeloContrato,
                 EstadoConductor.ACTIVO, null);
     }

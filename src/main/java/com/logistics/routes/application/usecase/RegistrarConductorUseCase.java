@@ -1,7 +1,6 @@
 package com.logistics.routes.application.usecase;
 
 import com.logistics.routes.application.command.RegistrarConductorCommand;
-import com.logistics.routes.application.port.in.RegistrarConductorPort;
 import com.logistics.routes.application.port.out.ConductorRepositoryPort;
 import com.logistics.routes.domain.exception.EmailDuplicadoException;
 import com.logistics.routes.domain.model.Conductor;
@@ -12,11 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class RegistrarConductorUseCase implements RegistrarConductorPort {
+public class RegistrarConductorUseCase {
 
     private final ConductorRepositoryPort conductorRepository;
 
-    @Override
     public Conductor ejecutar(RegistrarConductorCommand command) {
         if (conductorRepository.existePorEmail(command.email())) {
             throw new EmailDuplicadoException(command.email());
