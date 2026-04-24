@@ -16,4 +16,7 @@ public interface IntegracionModulo1Port {
      * LISTA_PARA_DESPACHO antes de confirmar el despacho.
      */
     void publishPaqueteExcluidoDespacho(UUID paqueteId, UUID rutaId, String motivo, Instant fechaHora);
+
+    /** Evento SPEC-08: paquete en tránsito al iniciar la ruta. */
+    void publishPaqueteEnTransito(UUID paqueteId, UUID rutaId, Instant fechaHora);
 }
