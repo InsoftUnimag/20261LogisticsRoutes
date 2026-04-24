@@ -37,4 +37,20 @@ class ZonaGeograficaTest {
         ZonaGeografica z2 = ZonaGeografica.from(4.7110, -74.0721);
         assertEquals(z1, z2);
     }
+
+    @Test
+    void coordenadas_cercanas_generan_mismo_geohash() {
+        // Dos puntos a ~200m en Bogotá → mismo geohash de precisión 5
+        ZonaGeografica z1 = ZonaGeografica.from(4.7110, -74.0721);
+        ZonaGeografica z2 = ZonaGeografica.from(4.7125, -74.0710);
+        assertEquals(z1.hash(), z2.hash());
+    }
+
+    @Test
+    void coordenadas_lejanas_generan_distinto_geohash() {
+        // Bogotá vs Medellín → geohashes distintos
+        ZonaGeografica bogota = ZonaGeografica.from(4.7110, -74.0721);
+        ZonaGeografica medellin = ZonaGeografica.from(6.2442, -75.5812);
+        assertNotEquals(bogota.hash(), medellin.hash());
+    }
 }

@@ -1,5 +1,7 @@
 package com.logistics.routes.domain.enums;
 
+import java.util.Optional;
+
 public enum TipoVehiculo {
     MOTO(50.0),
     VAN(300.0),
@@ -16,9 +18,15 @@ public enum TipoVehiculo {
         return capacidadKg;
     }
 
-    public TipoVehiculo siguienteTipo() {
+    public Optional<TipoVehiculo> siguienteTipo() {
         TipoVehiculo[] valores = values();
         int siguiente = ordinal() + 1;
-        return siguiente < valores.length ? valores[siguiente] : this;
+        return siguiente < valores.length
+                ? Optional.of(valores[siguiente])
+                : Optional.empty();
+    }
+
+    public boolean porcentajeExcede(double pesoActual, double umbralPorcentaje) {
+        return pesoActual > capacidadKg * (umbralPorcentaje / 100.0);
     }
 }
