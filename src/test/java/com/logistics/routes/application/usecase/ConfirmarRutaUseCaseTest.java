@@ -21,15 +21,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class DespacharManualUseCaseTest {
+class ConfirmarRutaUseCaseTest {
 
     @Mock RutaRepositoryPort rutaRepository;
 
-    DespacharManualUseCase useCase;
+    ConfirmarRutaUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new DespacharManualUseCase(rutaRepository);
+        useCase = new ConfirmarRutaUseCase(rutaRepository);
     }
 
     @Test

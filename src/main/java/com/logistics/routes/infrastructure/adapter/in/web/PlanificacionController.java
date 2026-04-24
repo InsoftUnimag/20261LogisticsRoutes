@@ -1,8 +1,8 @@
 package com.logistics.routes.infrastructure.adapter.in.web;
 
-import com.logistics.routes.application.usecase.DespacharManualUseCase;
+import com.logistics.routes.application.usecase.ConfirmarRutaUseCase;
 import com.logistics.routes.application.usecase.SolicitarRutaUseCase;
-import com.logistics.routes.infrastructure.dto.request.DespacharManualRequest;
+import com.logistics.routes.infrastructure.dto.request.ConfirmarRutaRequest;
 import com.logistics.routes.infrastructure.dto.request.SolicitarRutaRequest;
 import com.logistics.routes.infrastructure.dto.response.SolicitarRutaResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,7 +30,7 @@ import java.util.UUID;
 public class PlanificacionController {
 
         private final SolicitarRutaUseCase solicitarRuta;
-        private final DespacharManualUseCase despacharManual;
+        private final ConfirmarRutaUseCase confirmarRuta;
 
         @Operation(summary = "Solicitar asignación de paquete a ruta", description = "Recibe un paquete del SGP y lo consolida en una ruta activa de la zona geográfica. "
                         +
@@ -56,12 +56,12 @@ public class PlanificacionController {
                         @ApiResponse(responseCode = "404", description = "Ruta no encontrada"),
                         @ApiResponse(responseCode = "400", description = "Datos de la solicitud inválidos o estado de ruta incorrecto")
         })
-        @PostMapping("/rutas/{id}/despacho-manual")
+        @PostMapping("/rutas/{id}/confirmar")
         @PreAuthorize("hasRole('DISPATCHER')")
         @ResponseStatus(HttpStatus.NO_CONTENT)
-        public void despachoManual(
+        public void confirmarRuta(
                         @Parameter(description = "ID de la ruta a confirmar") @PathVariable UUID id,
-                        @Valid @RequestBody DespacharManualRequest request) {
-                despacharManual.ejecutar(id, request.conductorId(), request.vehiculoId());
+                        @Valid @RequestBody ConfirmarRutaRequest request) {
+                confirmarRuta.ejecutar(id, request.conductorId(), request.vehiculoId());
         }
 }

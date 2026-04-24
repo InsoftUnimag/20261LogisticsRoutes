@@ -7,6 +7,7 @@ import com.logistics.routes.domain.exception.ConductorYaAsignadoException;
 import com.logistics.routes.domain.exception.DominioException;
 import com.logistics.routes.domain.exception.EmailDuplicadoException;
 import com.logistics.routes.domain.exception.FechaLimiteVencidaException;
+import com.logistics.routes.domain.exception.ParadaNoEncontradaException;
 import com.logistics.routes.domain.exception.PlacaDuplicadaException;
 import com.logistics.routes.domain.exception.RutaNoEncontradaException;
 import com.logistics.routes.domain.exception.VehiculoEnTransitoException;
@@ -101,6 +102,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleRutaNoEncontrada(RutaNoEncontradaException ex) {
         return ErrorResponse.of("RUTA_NO_ENCONTRADA", ex.getMessage());
+    }
+
+    @ExceptionHandler(ParadaNoEncontradaException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleParadaNoEncontrada(ParadaNoEncontradaException ex) {
+        return ErrorResponse.of("PARADA_NO_ENCONTRADA", ex.getMessage());
     }
 
     @ExceptionHandler(FechaLimiteVencidaException.class)
