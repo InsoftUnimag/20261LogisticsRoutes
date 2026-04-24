@@ -34,7 +34,7 @@ public record VehiculoRequest(
         BigDecimal volumenMaximoM3,
 
         @NotBlank
-        @Size(min = 3, max = 20)
+        @Size(min = 5, max = 5, message = "La zona de operación debe ser un geohash de exactamente 5 caracteres")
         String zonaOperacion
 
 ) {
