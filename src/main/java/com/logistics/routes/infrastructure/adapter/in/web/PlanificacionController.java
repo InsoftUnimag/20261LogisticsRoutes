@@ -1,6 +1,7 @@
 package com.logistics.routes.infrastructure.adapter.in.web;
 
-import com.logistics.routes.application.usecase.ConfirmarRutaUseCase;
+import com.logistics.routes.application.command.ConfirmarDespachoCommand;
+import com.logistics.routes.application.usecase.ConfirmarDespachoUseCase;
 import com.logistics.routes.application.usecase.SolicitarRutaUseCase;
 import com.logistics.routes.infrastructure.dto.request.ConfirmarRutaRequest;
 import com.logistics.routes.infrastructure.dto.request.SolicitarRutaRequest;
@@ -30,7 +31,7 @@ import java.util.UUID;
 public class PlanificacionController {
 
         private final SolicitarRutaUseCase solicitarRuta;
-        private final ConfirmarRutaUseCase confirmarRuta;
+        private final ConfirmarDespachoUseCase confirmarRuta;
 
         @Operation(summary = "Solicitar asignación de paquete a ruta", description = "Recibe un paquete del SGP y lo consolida en una ruta activa de la zona geográfica. "
                         +
@@ -62,6 +63,6 @@ public class PlanificacionController {
         public void confirmarRuta(
                         @Parameter(description = "ID de la ruta a confirmar") @PathVariable UUID id,
                         @Valid @RequestBody ConfirmarRutaRequest request) {
-                confirmarRuta.ejecutar(id, request.conductorId(), request.vehiculoId());
+                confirmarRuta.ejecutar(id, new ConfirmarDespachoCommand(request.conductorId(), request.vehiculoId()));
         }
 }
