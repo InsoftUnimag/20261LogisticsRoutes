@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
-public record DespacharManualRequest(
+public record ConfirmarRutaRequest(
 
         @NotNull(message = "El conductorId es obligatorio")
         UUID conductorId,
