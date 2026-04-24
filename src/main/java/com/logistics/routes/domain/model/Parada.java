@@ -71,4 +71,19 @@ public class Parada {
         return new Parada(id, rutaId, paqueteId, orden, direccion, latitud, longitud,
                 tipoMercancia, metodoPago, fechaLimiteEntrega, estado, origen);
     }
+
+    public void marcarExcluidaDespacho() {
+        if (estado != EstadoParada.PENDIENTE) {
+            throw new IllegalStateException(
+                    "Solo se puede excluir una parada en estado PENDIENTE, estado actual: " + estado);
+        }
+        this.estado = EstadoParada.EXCLUIDA_DESPACHO;
+    }
+
+    public void asignarOrden(int orden) {
+        if (orden < 0) {
+            throw new IllegalArgumentException("El orden no puede ser negativo");
+        }
+        this.orden = orden;
+    }
 }
