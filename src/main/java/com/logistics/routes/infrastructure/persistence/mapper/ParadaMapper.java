@@ -22,6 +22,11 @@ public class ParadaMapper {
                 .metodoPago(p.getMetodoPago())
                 .fechaLimiteEntrega(p.getFechaLimiteEntrega())
                 .estado(p.getEstado())
+                .motivoNovedad(p.getMotivoNovedad())
+                .fechaHoraGestion(p.getFechaHoraGestion())
+                .firmaReceptorUrl(p.getFirmaReceptorUrl())
+                .fotoEvidenciaUrl(p.getFotoEvidenciaUrl())
+                .nombreReceptor(p.getNombreReceptor())
                 .origen(p.getOrigen())
                 .build();
     }
@@ -39,6 +44,11 @@ public class ParadaMapper {
                 e.getMetodoPago(),
                 e.getFechaLimiteEntrega(),
                 e.getEstado(),
+                e.getMotivoNovedad(),
+                e.getFechaHoraGestion(),
+                e.getFirmaReceptorUrl(),
+                e.getFotoEvidenciaUrl(),
+                e.getNombreReceptor(),
                 e.getOrigen()
         );
     }
