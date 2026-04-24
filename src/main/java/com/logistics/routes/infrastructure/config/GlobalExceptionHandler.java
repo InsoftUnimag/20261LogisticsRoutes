@@ -9,6 +9,7 @@ import com.logistics.routes.domain.exception.EmailDuplicadoException;
 import com.logistics.routes.domain.exception.FechaLimiteVencidaException;
 import com.logistics.routes.domain.exception.ParadaNoEncontradaException;
 import com.logistics.routes.domain.exception.PlacaDuplicadaException;
+import com.logistics.routes.domain.exception.RutaEstadoInvalidoException;
 import com.logistics.routes.domain.exception.RutaNoEncontradaException;
 import com.logistics.routes.domain.exception.VehiculoEnTransitoException;
 import com.logistics.routes.domain.exception.VehiculoNoDisponibleException;
@@ -114,6 +115,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     public ErrorResponse handleFechaLimiteVencida(FechaLimiteVencidaException ex) {
         return ErrorResponse.of("FECHA_LIMITE_VENCIDA", ex.getMessage());
+    }
+
+    @ExceptionHandler(RutaEstadoInvalidoException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleRutaEstadoInvalido(RutaEstadoInvalidoException ex) {
+        return ErrorResponse.of("RUTA_ESTADO_INVALIDO", ex.getMessage());
     }
 
     /** Fallback para cualquier excepción de dominio no mapeada explícitamente. */

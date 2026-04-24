@@ -23,4 +23,10 @@ public class InMemoryIntegracionModulo1Adapter implements IntegracionModulo1Port
         log.info("[M1-EVENT] PAQUETE_EXCLUIDO_DESPACHO paquete_id={} ruta_id={} motivo='{}' timestamp={}",
                 paqueteId, rutaId, motivo, fechaHora);
     }
+
+    @Override
+    public void publishPaqueteEnTransito(UUID paqueteId, UUID rutaId, Instant fechaHora) {
+        log.info("[M1-EVENT] PAQUETE_EN_TRANSITO paquete_id={} ruta_id={} timestamp={}",
+                paqueteId, rutaId, fechaHora);
+    }
 }

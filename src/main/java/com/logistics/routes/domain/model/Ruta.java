@@ -100,6 +100,15 @@ public class Ruta {
         this.estado = EstadoRuta.LISTA_PARA_DESPACHO;
     }
 
+    public void iniciarTransito() {
+        if (estado != EstadoRuta.CONFIRMADA) {
+            throw new IllegalStateException(
+                    "Solo se puede iniciar tránsito desde CONFIRMADA, estado actual: " + estado);
+        }
+        this.estado = EstadoRuta.EN_TRANSITO;
+        this.fechaHoraInicio = Instant.now();
+    }
+
     public void confirmar(UUID conductorId, UUID vehiculoId) {
         if (estado != EstadoRuta.LISTA_PARA_DESPACHO) {
             throw new IllegalStateException(
