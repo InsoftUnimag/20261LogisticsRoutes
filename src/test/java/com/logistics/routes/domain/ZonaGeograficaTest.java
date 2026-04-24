@@ -9,10 +9,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class ZonaGeograficaTest {
 
     @Test
-    void from_genera_hash_de_4_caracteres() {
+    void from_genera_hash_de_5_caracteres() {
         ZonaGeografica zona = ZonaGeografica.from(4.7110, -74.0721); // Bogotá
         assertNotNull(zona.hash());
-        assertEquals(4, zona.hash().length());
+        assertEquals(5, zona.hash().length());
     }
 
     @Test
@@ -24,9 +24,11 @@ class ZonaGeograficaTest {
     @Test
     void constructor_falla_con_hash_de_longitud_incorrecta() {
         assertThrows(ZonaGeograficaInvalidaException.class,
-                () -> new ZonaGeografica("abc"));       // 3 chars
+                () -> new ZonaGeografica("abc"));      // 3 chars — muy corto
         assertThrows(ZonaGeograficaInvalidaException.class,
-                () -> new ZonaGeografica("abcde"));     // 5 chars
+                () -> new ZonaGeografica("abcd"));     // 4 chars — un char menos
+        assertThrows(ZonaGeograficaInvalidaException.class,
+                () -> new ZonaGeografica("abcdef"));   // 6 chars — un char de más
     }
 
     @Test

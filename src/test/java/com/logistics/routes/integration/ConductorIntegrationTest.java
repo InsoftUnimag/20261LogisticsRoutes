@@ -107,7 +107,7 @@ class ConductorIntegrationTest {
         // 2. Crear vehículo disponible
         VehiculoRequest vehiculoReq = new VehiculoRequest(
                 "ASG001", TipoVehiculo.MOTO, "Honda CB 160F",
-                BigDecimal.valueOf(35), BigDecimal.valueOf(0.35), "d2g");
+                BigDecimal.valueOf(35), BigDecimal.valueOf(0.35), "d3gpz");
         MvcResult vehiculoResult = mockMvc.perform(post(VEHICULOS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(vehiculoReq)))
