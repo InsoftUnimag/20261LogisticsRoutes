@@ -5,6 +5,7 @@ import com.logistics.routes.application.command.RegistrarVehiculoCommand;
 import com.logistics.routes.domain.enums.EstadoVehiculo;
 import com.logistics.routes.domain.enums.TipoVehiculo;
 import com.logistics.routes.domain.exception.VehiculoEnTransitoException;
+import com.logistics.routes.domain.exception.VehiculoNoDisponibleException;
 import com.logistics.routes.domain.valueobject.ZonaGeografica;
 
 import java.util.UUID;
@@ -126,6 +127,13 @@ public class Vehiculo {
     public void desvincularConductor() {
         this.conductorId = null;
         this.estado = EstadoVehiculo.DISPONIBLE;
+    }
+
+    public void marcarEnTransito() {
+        if (estado != EstadoVehiculo.DISPONIBLE) {
+            throw new VehiculoNoDisponibleException(id.toString());
+        }
+        this.estado = EstadoVehiculo.EN_TRANSITO;
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────
