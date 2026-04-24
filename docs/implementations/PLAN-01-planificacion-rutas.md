@@ -47,27 +47,25 @@ domain/
 
 application/
 ├── port/
-│   └── in/
-│       ├── SolicitarRutaPort.java         [existente — PLAN-00]
-│       ├── DespacharManualPort.java       [existente — PLAN-00]
-│       └── ProcesarRutasVencidasPort.java [existente — PLAN-00]
+│   └── out/
+│     
 └── usecase/
-    ├── SolicitarRutaUseCase.java          [NUEVO — implements SolicitarRutaPort]
-    ├── DespacharManualUseCase.java        [NUEVO — implements DespacharManualPort]
-    └── ProcesarRutasVencidasUseCase.java  [NUEVO — implements ProcesarRutasVencidasPort]
+    ├── SolicitarRutaUseCase.java          
+    ├── DespacharManualUseCase.java       
+    └── ProcesarRutasVencidasUseCase.java 
 
 infrastructure/
 ├── adapter/
 │   ├── in/
 │   │   ├── web/
-│   │   │   └── PlanificacionController.java  [NUEVO — inyecta los 3 puertos individuales]
+│   │   │   └── PlanificacionController.java  [NUEVO — inyecta los usecase]
 │   │   └── messaging/
-│   │       └── SolicitarRutaConsumer.java    [NUEVO — listener SQS, llama a SolicitarRutaPort]
+│   │       └── SolicitarRutaConsumer.java    [NUEVO — listener SQS, llama a SolicitarRutaUseCase]
 │   └── out/
 │       └── persistence/
 │           └── RutaJpaAdapter.java           [existente — PLAN-00, se extiende]
 ├── scheduler/
-│   └── FechaLimiteDespachoScheduler.java    [NUEVO — llama a ProcesarRutasVencidasPort]
+│   └── FechaLimiteDespachoScheduler.java    [NUEVO — llama a ProcesarRutasVencidasUseCase]
 └── dto/
     ├── request/
     │   └── SolicitarRutaRequest.java        [NUEVO]
@@ -101,7 +99,7 @@ infrastructure/
   - `VAN.siguienteTipo()` → `NHR`
   - `NHR.siguienteTipo()` → `TURBO`
   - `TURBO.siguienteTipo()` → `Optional.empty()`
-  - `MOTO.capacidadKg()` → `20.0`
+  - `MOTO.capacidadKg()` → `50.0`
   - `TURBO.capacidadKg()` → `4500.0`
 
 - [ ] T106 [P] Test unitario `ZonaGeograficaTest`:

@@ -59,7 +59,7 @@ class VehiculoIntegrationTest {
                 "Yamaha NMX 155",
                 BigDecimal.valueOf(45),
                 BigDecimal.valueOf(0.45),
-                "d2g"
+                "d3gpz"
         );
     }
 

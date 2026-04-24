@@ -62,7 +62,7 @@ class FlotaIntegrationTest {
         // 1. Registrar vehículo
         VehiculoRequest vehiculoReq = new VehiculoRequest(
                 "FLT123", TipoVehiculo.VAN, "Renault Kangoo",
-                BigDecimal.valueOf(800), BigDecimal.valueOf(3.0), "bog-norte");
+                BigDecimal.valueOf(800), BigDecimal.valueOf(3.0), "d3gpz");
         
         MvcResult vehiculoResult = mockMvc.perform(post(VEHICULOS)
                         .contentType(MediaType.APPLICATION_JSON)
