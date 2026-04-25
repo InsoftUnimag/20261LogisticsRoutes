@@ -17,7 +17,7 @@ import java.util.UUID;
  * estado de la ruta, fecha de inicio de tránsito y paradas con todos los
  * datos del paquete (mercancía, método de pago, fecha límite).
  */
-public record RutaActivaResponse(
+public record RutaConductorResponse(
         UUID id,
         String zona,
         EstadoRuta estado,
@@ -67,8 +67,8 @@ public record RutaActivaResponse(
         }
     }
 
-    public static RutaActivaResponse from(Ruta ruta, List<Parada> paradas) {
-        return new RutaActivaResponse(
+    public static RutaConductorResponse from(Ruta ruta, List<Parada> paradas) {
+        return new RutaConductorResponse(
                 ruta.getId(),
                 ruta.getZona(),
                 ruta.getEstado(),

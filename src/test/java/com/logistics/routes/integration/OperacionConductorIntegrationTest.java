@@ -17,6 +17,7 @@ import com.logistics.routes.domain.model.Conductor;
 import com.logistics.routes.domain.model.Parada;
 import com.logistics.routes.domain.model.Ruta;
 import com.logistics.routes.domain.model.Vehiculo;
+import com.logistics.routes.infrastructure.dto.request.CierreRutaRequest;
 import com.logistics.routes.infrastructure.dto.request.RegistrarParadaRequest;
 import com.logistics.routes.infrastructure.persistence.entity.UsuarioEntity;
 import com.logistics.routes.infrastructure.persistence.repository.UsuarioJpaRepository;
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -41,6 +43,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -203,7 +206,7 @@ class OperacionConductorIntegrationTest {
                 .andExpect(jsonPath("$.codigo").value("RUTA_NO_ENCONTRADA"));
     }
 
-    // ── POST /rutas/{rutaId}/paradas/{paradaId}/resultado ─────────────────────
+    // ── POST /paradas/{paradaId}/registrar ────────────────────────────────────
 
     @Test
     void registrar_parada_exitosa_actualiza_estado_y_pod() throws Exception {
@@ -217,8 +220,7 @@ class OperacionConductorIntegrationTest {
                 "https://s3/foto.jpg", "https://s3/firma.png", "Pedro Pérez",
                 null, fechaAccion);
 
-        mockMvc.perform(post("/api/conductor/rutas/{rutaId}/paradas/{paradaId}/resultado",
-                        ruta.getId(), parada.getId())
+        mockMvc.perform(post("/api/conductor/paradas/{paradaId}/registrar", parada.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isNoContent());
@@ -239,8 +241,7 @@ class OperacionConductorIntegrationTest {
                 RegistrarParadaRequest.TipoResultado.EXITOSA,
                 null, null, "Pedro Pérez", null, Instant.now());
 
-        mockMvc.perform(post("/api/conductor/rutas/{rutaId}/paradas/{paradaId}/resultado",
-                        ruta.getId(), parada.getId())
+        mockMvc.perform(post("/api/conductor/paradas/{paradaId}/registrar", parada.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isUnprocessableEntity());
@@ -258,8 +259,7 @@ class OperacionConductorIntegrationTest {
                 RegistrarParadaRequest.TipoResultado.FALLIDA,
                 null, null, null, MotivoNovedad.CLIENTE_AUSENTE, Instant.now());
 
-        mockMvc.perform(post("/api/conductor/rutas/{rutaId}/paradas/{paradaId}/resultado",
-                        ruta.getId(), parada.getId())
+        mockMvc.perform(post("/api/conductor/paradas/{paradaId}/registrar", parada.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isNoContent());
@@ -278,8 +278,7 @@ class OperacionConductorIntegrationTest {
                 RegistrarParadaRequest.TipoResultado.NOVEDAD,
                 null, null, null, MotivoNovedad.DAÑADO_EN_RUTA, Instant.now());
 
-        mockMvc.perform(post("/api/conductor/rutas/{rutaId}/paradas/{paradaId}/resultado",
-                        ruta.getId(), parada.getId())
+        mockMvc.perform(post("/api/conductor/paradas/{paradaId}/registrar", parada.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isNoContent());
@@ -287,5 +286,129 @@ class OperacionConductorIntegrationTest {
         Parada persistida = paradaRepo.buscarPorId(parada.getId()).orElseThrow();
         assertThat(persistida.getEstado()).isEqualTo(EstadoParada.NOVEDAD);
         assertThat(persistida.getMotivoNovedad()).isEqualTo(MotivoNovedad.DAÑADO_EN_RUTA);
+    }
+
+    // ── POST /paradas/{paradaId}/foto (multipart) ─────────────────────────────
+
+    @Test
+    void subir_foto_almacena_archivo_y_retorna_url() throws Exception {
+        Ruta ruta = crearRutaEnTransito();
+        Parada parada = crearParadaPendiente(ruta.getId(), 1);
+        MockMultipartFile foto = new MockMultipartFile(
+                "archivo", "evidencia.jpg", "image/jpeg",
+                new byte[]{1, 2, 3, 4, 5});
+
+        mockMvc.perform(multipart("/api/conductor/paradas/{paradaId}/foto", parada.getId())
+                        .file(foto))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.url").exists());
+    }
+
+    @Test
+    void subir_foto_para_parada_inexistente_devuelve_404() throws Exception {
+        MockMultipartFile foto = new MockMultipartFile(
+                "archivo", "evidencia.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        mockMvc.perform(multipart("/api/conductor/paradas/{paradaId}/foto", UUID.randomUUID())
+                        .file(foto))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.codigo").value("PARADA_NO_ENCONTRADA"));
+    }
+
+    @Test
+    void subir_foto_vacia_devuelve_422() throws Exception {
+        Ruta ruta = crearRutaEnTransito();
+        Parada parada = crearParadaPendiente(ruta.getId(), 1);
+        MockMultipartFile fotoVacia = new MockMultipartFile(
+                "archivo", "vacia.jpg", "image/jpeg", new byte[0]);
+
+        mockMvc.perform(multipart("/api/conductor/paradas/{paradaId}/foto", parada.getId())
+                        .file(fotoVacia))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    // ── E2E: flujo completo CONFIRMADA → EN_TRANSITO → paradas → CERRADA ──────
+
+    @Test
+    void flujo_completo_conductor_de_extremo_a_extremo() throws Exception {
+        // 1) Setup: ruta CONFIRMADA con 3 paradas pendientes
+        Ruta ruta = crearRutaConfirmada();
+        Parada p1 = crearParadaPendiente(ruta.getId(), 1);
+        Parada p2 = crearParadaPendiente(ruta.getId(), 2);
+        Parada p3 = crearParadaPendiente(ruta.getId(), 3);
+
+        // 2) GET /ruta-activa retorna ruta CONFIRMADA con 3 paradas
+        mockMvc.perform(get("/api/conductor/ruta-activa"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("CONFIRMADA"))
+                .andExpect(jsonPath("$.paradas.length()").value(3));
+
+        // 3) POST /iniciar-transito → ruta EN_TRANSITO
+        mockMvc.perform(post("/api/conductor/rutas/{id}/iniciar-transito", ruta.getId()))
+                .andExpect(status().isNoContent());
+        assertThat(rutaRepo.buscarPorId(ruta.getId()).orElseThrow().getEstado())
+                .isEqualTo(EstadoRuta.EN_TRANSITO);
+
+        // 4) POST foto para p1 → URL retornada
+        MockMultipartFile foto = new MockMultipartFile(
+                "archivo", "pod.jpg", "image/jpeg", new byte[]{10, 20, 30});
+        String fotoJson = mockMvc.perform(multipart("/api/conductor/paradas/{paradaId}/foto", p1.getId())
+                        .file(foto))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String fotoUrl = objectMapper.readTree(fotoJson).get("url").asText();
+        assertThat(fotoUrl).isNotBlank();
+
+        // 5) POST registrar EXITOSA para p1 con la URL recién subida
+        RegistrarParadaRequest exitosa = new RegistrarParadaRequest(
+                RegistrarParadaRequest.TipoResultado.EXITOSA,
+                fotoUrl, null, "Carlos Receptor", null,
+                Instant.now().truncatedTo(ChronoUnit.MICROS));
+        mockMvc.perform(post("/api/conductor/paradas/{paradaId}/registrar", p1.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(exitosa)))
+                .andExpect(status().isNoContent());
+        assertThat(paradaRepo.buscarPorId(p1.getId()).orElseThrow().getEstado())
+                .isEqualTo(EstadoParada.EXITOSA);
+
+        // 6) POST registrar FALLIDA para p2
+        RegistrarParadaRequest fallida = new RegistrarParadaRequest(
+                RegistrarParadaRequest.TipoResultado.FALLIDA,
+                null, null, null, MotivoNovedad.CLIENTE_AUSENTE,
+                Instant.now().truncatedTo(ChronoUnit.MICROS));
+        mockMvc.perform(post("/api/conductor/paradas/{paradaId}/registrar", p2.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(fallida)))
+                .andExpect(status().isNoContent());
+        assertThat(paradaRepo.buscarPorId(p2.getId()).orElseThrow().getEstado())
+                .isEqualTo(EstadoParada.FALLIDA);
+
+        // 7) POST cerrar con confirmarConPendientes=false rechaza por p3 PENDIENTE
+        mockMvc.perform(post("/api/conductor/rutas/{id}/cerrar", ruta.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CierreRutaRequest(false))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("PARADAS_PENDIENTES"));
+
+        // 8) POST cerrar con confirmarConPendientes=true marca p3 SIN_GESTION y cierra ruta
+        mockMvc.perform(post("/api/conductor/rutas/{id}/cerrar", ruta.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CierreRutaRequest(true))))
+                .andExpect(status().isNoContent());
+
+        Ruta cerrada = rutaRepo.buscarPorId(ruta.getId()).orElseThrow();
+        assertThat(cerrada.getEstado()).isEqualTo(EstadoRuta.CERRADA_MANUAL);
+        assertThat(cerrada.getFechaHoraCierre()).isNotNull();
+
+        Parada p3Final = paradaRepo.buscarPorId(p3.getId()).orElseThrow();
+        assertThat(p3Final.getEstado()).isEqualTo(EstadoParada.SIN_GESTION_CONDUCTOR);
+        assertThat(p3Final.getOrigen()).isEqualTo(OrigenParada.SISTEMA);
+
+        Vehiculo vehiculo = vehiculoRepo.buscarPorId(vehiculoId).orElseThrow();
+        assertThat(vehiculo.getEstado()).isEqualTo(EstadoVehiculo.DISPONIBLE);
+        assertThat(vehiculo.getConductorId()).isEqualTo(conductorId);
+
+        Conductor conductor = conductorRepo.buscarPorId(conductorId).orElseThrow();
+        assertThat(conductor.getEstado()).isEqualTo(EstadoConductor.ACTIVO);
     }
 }

@@ -30,6 +30,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -246,6 +248,21 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleAuthenticationException(org.springframework.security.core.AuthenticationException ex) {
         log.warn("Error de autenticación: {}", ex.getMessage());
         return ErrorResponse.of("UNAUTHORIZED", "Credenciales inválidas");
+    }
+
+    /**
+     * Maneja {@link ResponseStatusException} respetando el status code que la excepción declara.
+     * Sin este handler, el fallback genérico capturaría la excepción y retornaría 500
+     * en lugar del status original.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException ex) {
+        log.warn("ResponseStatusException: {} {}", ex.getStatusCode(), ex.getReason());
+        ErrorResponse body = ErrorResponse.of(
+                "STATUS_" + ex.getStatusCode().value(),
+                ex.getReason() != null ? ex.getReason() : "Error en la solicitud"
+        );
+        return ResponseEntity.status(ex.getStatusCode()).body(body);
     }
 
     /**

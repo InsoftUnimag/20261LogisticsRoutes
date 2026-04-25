@@ -5,10 +5,11 @@ import com.logistics.routes.application.usecase.CerrarRutaManualUseCase;
 import com.logistics.routes.application.usecase.ConsultarRutaActivaUseCase;
 import com.logistics.routes.application.usecase.IniciarTransitoUseCase;
 import com.logistics.routes.application.usecase.RegistrarParadaUseCase;
-import com.logistics.routes.domain.model.Parada;
+import com.logistics.routes.application.usecase.SubirFotoParadaUseCase;
 import com.logistics.routes.infrastructure.dto.request.CierreRutaRequest;
 import com.logistics.routes.infrastructure.dto.request.RegistrarParadaRequest;
-import com.logistics.routes.infrastructure.dto.response.RutaActivaResponse;
+import com.logistics.routes.infrastructure.dto.response.RutaConductorResponse;
+import com.logistics.routes.infrastructure.dto.response.SubirFotoResponse;
 import com.logistics.routes.infrastructure.security.ConductorContextService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,9 +27,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.UUID;
 
 @RestController
@@ -41,6 +46,7 @@ public class ConductorOperacionController {
     private final ConsultarRutaActivaUseCase consultarRutaActiva;
     private final IniciarTransitoUseCase iniciarTransito;
     private final RegistrarParadaUseCase registrarParada;
+    private final SubirFotoParadaUseCase subirFotoParada;
     private final CerrarRutaManualUseCase cerrarRuta;
     private final ConductorContextService contexto;
 
@@ -52,10 +58,10 @@ public class ConductorOperacionController {
             @ApiResponse(responseCode = "204", description = "El conductor no tiene ruta activa")
     })
     @GetMapping("/ruta-activa")
-    public ResponseEntity<RutaActivaResponse> rutaActiva(Authentication auth) {
+    public ResponseEntity<RutaConductorResponse> rutaActiva(Authentication auth) {
         UUID conductorId = contexto.obtenerConductorId(auth);
         return consultarRutaActiva.ejecutar(conductorId)
-                .map(view -> ResponseEntity.ok(RutaActivaResponse.from(view.ruta(), view.paradas())))
+                .map(view -> ResponseEntity.ok(RutaConductorResponse.from(view.ruta(), view.paradas())))
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
@@ -77,6 +83,26 @@ public class ConductorOperacionController {
         iniciarTransito.ejecutar(new IniciarTransitoCommand(id, conductorId));
     }
 
+    @Operation(summary = "Subir foto de evidencia (POD) de una parada",
+            description = "Carga el archivo de la foto al almacenamiento (local en dev/test, S3 en prod) y "
+                    + "retorna la URL para que el conductor la incluya en el registro de la parada.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Foto almacenada — URL retornada"),
+            @ApiResponse(responseCode = "404", description = "Parada no encontrada"),
+            @ApiResponse(responseCode = "422", description = "Archivo vacío o tipo no soportado")
+    })
+    @PostMapping(value = "/paradas/{paradaId}/foto", consumes = "multipart/form-data")
+    public SubirFotoResponse subirFoto(
+            @Parameter(description = "ID de la parada") @PathVariable UUID paradaId,
+            @RequestParam("archivo") MultipartFile archivo) throws IOException {
+        if (archivo.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "El archivo de foto no puede estar vacío");
+        }
+        String url = subirFotoParada.ejecutar(paradaId, archivo.getBytes(), archivo.getContentType());
+        return new SubirFotoResponse(url);
+    }
+
     @Operation(summary = "Registrar resultado de una parada",
             description = "Registra el resultado de la parada (EXITOSA, FALLIDA o NOVEDAD). "
                     + "Para EXITOSA, fotoUrl es obligatoria (POD). Publica el evento correspondiente a M1. "
@@ -87,17 +113,12 @@ public class ConductorOperacionController {
             @ApiResponse(responseCode = "409", description = "La ruta no está EN_TRANSITO o la parada no está PENDIENTE"),
             @ApiResponse(responseCode = "422", description = "POD ausente para resultado EXITOSA o cuerpo inválido")
     })
-    @PostMapping("/rutas/{rutaId}/paradas/{paradaId}/resultado")
+    @PostMapping("/paradas/{paradaId}/registrar")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void registrarResultado(
-            @Parameter(description = "ID de la ruta") @PathVariable UUID rutaId,
             @Parameter(description = "ID de la parada") @PathVariable UUID paradaId,
             @Valid @RequestBody RegistrarParadaRequest request) {
-        Parada actualizada = registrarParada.ejecutar(request.toCommand(paradaId));
-        if (!actualizada.getRutaId().equals(rutaId)) {
-            throw new IllegalArgumentException(
-                    "La parada " + paradaId + " no pertenece a la ruta " + rutaId);
-        }
+        registrarParada.ejecutar(request.toCommand(paradaId));
     }
 
     @Operation(summary = "Cerrar ruta manualmente",
