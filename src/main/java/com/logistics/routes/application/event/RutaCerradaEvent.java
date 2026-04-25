@@ -1,4 +1,4 @@
-package com.logistics.routes.application.usecase;
+package com.logistics.routes.application.event;
 
 import com.logistics.routes.domain.model.Conductor;
 import com.logistics.routes.domain.model.Parada;

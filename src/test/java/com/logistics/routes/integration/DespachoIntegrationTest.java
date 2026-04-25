@@ -163,11 +163,12 @@ class DespachoIntegrationTest {
                 .andExpect(jsonPath("$.codigo").value("PARADA_NO_ENCONTRADA"));
     }
 
-    // ── Test 6: POST /rutas/{id}/forzar-cierre (stub hasta F18) ──────────────
+    // ── Test 6: POST /rutas/{id}/forzar-cierre con ruta inexistente ──────────
 
     @Test
-    void forzar_cierre_retorna_501_porque_es_stub_hasta_f18() throws Exception {
+    void forzar_cierre_de_ruta_inexistente_retorna_404() throws Exception {
         mockMvc.perform(post(BASE + "/rutas/" + UUID.randomUUID() + "/forzar-cierre"))
-                .andExpect(status().isNotImplemented());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.codigo").value("RUTA_NO_ENCONTRADA"));
     }
 }

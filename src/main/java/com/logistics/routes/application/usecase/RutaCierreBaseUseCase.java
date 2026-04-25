@@ -1,5 +1,6 @@
 package com.logistics.routes.application.usecase;
 
+import com.logistics.routes.application.event.RutaCerradaEvent;
 import com.logistics.routes.application.port.out.ConductorRepositoryPort;
 import com.logistics.routes.application.port.out.IntegracionModulo1Port;
 import com.logistics.routes.application.port.out.IntegracionModulo3Port;
@@ -93,7 +94,7 @@ public abstract class RutaCierreBaseUseCase {
             case FORZADO_DESPACHADOR -> EstadoRuta.CERRADA_FORZADA;
         };
 
-        ruta.cerrar(estadoCierre, tipoCierre);
+        ruta.cerrar(estadoCierre, tipoCierre, ahora);
         rutaRepository.guardar(ruta);
 
         Conductor conductor = conductorRepository.buscarPorId(ruta.getConductorId())

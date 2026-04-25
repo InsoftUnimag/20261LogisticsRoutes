@@ -1,7 +1,7 @@
 package com.logistics.routes.infrastructure.adapter.out.integration;
 
 import com.logistics.routes.application.port.out.IntegracionModulo3Port;
-import com.logistics.routes.application.usecase.RutaCerradaEvent;
+import com.logistics.routes.application.event.RutaCerradaEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

@@ -2,6 +2,7 @@ package com.logistics.routes.application.usecase;
 
 import com.logistics.routes.application.port.out.ParadaRepositoryPort;
 import com.logistics.routes.application.port.out.RutaRepositoryPort;
+import com.logistics.routes.application.view.RutaActivaView;
 import com.logistics.routes.domain.model.Parada;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

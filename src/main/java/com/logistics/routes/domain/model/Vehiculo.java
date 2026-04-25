@@ -131,7 +131,6 @@ public class Vehiculo {
 
     public void marcarDisponible() {
         this.estado = EstadoVehiculo.DISPONIBLE;
-        this.conductorId = null;
     }
 
     public void marcarEnTransito() {

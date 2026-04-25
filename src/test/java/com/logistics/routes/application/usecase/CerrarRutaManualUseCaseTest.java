@@ -1,5 +1,6 @@
 package com.logistics.routes.application.usecase;
 
+import com.logistics.routes.application.event.RutaCerradaEvent;
 import com.logistics.routes.application.port.out.ConductorRepositoryPort;
 import com.logistics.routes.application.port.out.IntegracionModulo1Port;
 import com.logistics.routes.application.port.out.IntegracionModulo3Port;
@@ -114,7 +115,7 @@ class CerrarRutaManualUseCaseTest {
         assertThat(ruta.getFechaHoraCierre()).isNotNull();
         assertThat(conductor.getEstado()).isEqualTo(EstadoConductor.ACTIVO);
         assertThat(vehiculo.getEstado()).isEqualTo(EstadoVehiculo.DISPONIBLE);
-        assertThat(vehiculo.getConductorId()).isNull();
+        assertThat(vehiculo.getConductorId()).isEqualTo(conductorId);
 
         verify(conductorRepository).guardar(conductor);
         verify(vehiculoRepository).guardar(vehiculo);

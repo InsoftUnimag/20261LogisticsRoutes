@@ -149,7 +149,7 @@ class CierreRutaIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CierreRutaRequest(false))))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("PARADAS_PENDIENTES"));
+                .andExpect(jsonPath("$.codigo").value("PARADAS_PENDIENTES"));
 
         Ruta sinCerrar = rutaRepo.buscarPorId(ruta.getId()).orElseThrow();
         assertThat(sinCerrar.getEstado()).isEqualTo(EstadoRuta.EN_TRANSITO);
@@ -205,6 +205,6 @@ class CierreRutaIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new CierreRutaRequest(false))))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("RUTA_NO_ENCONTRADA"));
+                .andExpect(jsonPath("$.codigo").value("RUTA_NO_ENCONTRADA"));
     }
 }

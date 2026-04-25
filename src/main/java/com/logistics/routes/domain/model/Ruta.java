@@ -109,13 +109,16 @@ public class Ruta {
         this.fechaHoraInicio = Instant.now();
     }
 
-    public void cerrar(EstadoRuta estadoCierre, TipoCierre tipoCierre) {
+    public void cerrar(EstadoRuta estadoCierre, TipoCierre tipoCierre, Instant fechaHoraCierre) {
         if (estado != EstadoRuta.EN_TRANSITO) {
             throw new IllegalStateException(
                     "Solo se puede cerrar desde EN_TRANSITO, estado actual: " + estado);
         }
+        if (fechaHoraCierre == null) {
+            throw new IllegalArgumentException("La fecha hora de cierre no puede ser nula");
+        }
         this.estado = estadoCierre;
-        this.fechaHoraCierre = Instant.now();
+        this.fechaHoraCierre = fechaHoraCierre;
         this.tipoCierre = tipoCierre;
     }
 
