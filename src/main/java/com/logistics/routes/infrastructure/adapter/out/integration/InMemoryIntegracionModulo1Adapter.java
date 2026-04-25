@@ -31,9 +31,10 @@ public class InMemoryIntegracionModulo1Adapter implements IntegracionModulo1Port
     }
 
     @Override
-    public void publishPaqueteEntregado(UUID paqueteId, UUID rutaId, Instant fechaEntrega) {
-        log.info("[M1-EVENT] PAQUETE_ENTREGADO paquete_id={} ruta_id={} timestamp={}",
-                paqueteId, rutaId, fechaEntrega);
+    public void publishPaqueteEntregado(UUID paqueteId, UUID rutaId, Instant fechaEntrega,
+                                        String urlFoto, String urlFirma) {
+        log.info("[M1-EVENT] PAQUETE_ENTREGADO paquete_id={} ruta_id={} timestamp={} url_foto='{}' url_firma='{}'",
+                paqueteId, rutaId, fechaEntrega, urlFoto, urlFirma);
     }
 
     @Override

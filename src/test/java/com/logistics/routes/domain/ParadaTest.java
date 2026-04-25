@@ -177,6 +177,35 @@ class ParadaTest {
         assertEquals(OrigenParada.SISTEMA, p.getOrigen());
     }
 
+    // ── Validación de estado PENDIENTE ──────────────────────────────────
+
+    @Test
+    void marcarExitosa_falla_si_parada_no_esta_pendiente() {
+        Parada p = paradaPendiente();
+        p.marcarFallida(MotivoNovedad.CLIENTE_AUSENTE, Instant.now());
+
+        assertThrows(IllegalStateException.class,
+                () -> p.marcarExitosa("http://foto.jpg", null, "Juan", Instant.now()));
+    }
+
+    @Test
+    void marcarFallida_falla_si_parada_no_esta_pendiente() {
+        Parada p = paradaPendiente();
+        p.marcarExitosa("http://foto.jpg", null, "Juan", Instant.now());
+
+        assertThrows(IllegalStateException.class,
+                () -> p.marcarFallida(MotivoNovedad.CLIENTE_AUSENTE, Instant.now()));
+    }
+
+    @Test
+    void marcarNovedad_falla_si_parada_no_esta_pendiente() {
+        Parada p = paradaPendiente();
+        p.marcarNovedad(MotivoNovedad.EXTRAVIADO, Instant.now());
+
+        assertThrows(IllegalStateException.class,
+                () -> p.marcarNovedad(MotivoNovedad.EXTRAVIADO, Instant.now()));
+    }
+
     // ── esPODValido ─────────────────────────────────────────────────────
 
     @Test

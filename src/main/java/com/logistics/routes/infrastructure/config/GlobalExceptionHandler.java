@@ -1,6 +1,7 @@
 package com.logistics.routes.infrastructure.config;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.logistics.routes.domain.exception.ConductorNoAsignadoARutaException;
 import com.logistics.routes.domain.exception.ConductorNoDisponibleException;
 import com.logistics.routes.domain.exception.ConductorNoEncontradoException;
 import com.logistics.routes.domain.exception.ConductorYaAsignadoException;
@@ -92,6 +93,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleConductorNoDisponible(ConductorNoDisponibleException ex) {
         return ErrorResponse.of("CONDUCTOR_NO_DISPONIBLE", ex.getMessage());
+    }
+
+    @ExceptionHandler(ConductorNoAsignadoARutaException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleConductorNoAsignadoARuta(ConductorNoAsignadoARutaException ex) {
+        return ErrorResponse.of("CONDUCTOR_NO_ASIGNADO_A_RUTA", ex.getMessage());
     }
 
     @ExceptionHandler(EmailDuplicadoException.class)

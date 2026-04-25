@@ -8,7 +8,7 @@ import com.logistics.routes.domain.enums.EstadoParada;
 import com.logistics.routes.domain.enums.EstadoRuta;
 import com.logistics.routes.domain.enums.OrigenParada;
 import com.logistics.routes.domain.enums.TipoVehiculo;
-import com.logistics.routes.domain.exception.ConductorNoDisponibleException;
+import com.logistics.routes.domain.exception.ConductorNoAsignadoARutaException;
 import com.logistics.routes.domain.exception.RutaEstadoInvalidoException;
 import com.logistics.routes.domain.exception.RutaNoEncontradaException;
 import com.logistics.routes.domain.model.Parada;
@@ -121,6 +121,6 @@ class IniciarTransitoUseCaseTest {
         when(rutaRepository.buscarPorId(rutaId)).thenReturn(Optional.of(ruta));
 
         assertThatThrownBy(() -> useCase.ejecutar(new IniciarTransitoCommand(rutaId, otroConductor)))
-                .isInstanceOf(ConductorNoDisponibleException.class);
+                .isInstanceOf(ConductorNoAsignadoARutaException.class);
     }
 }

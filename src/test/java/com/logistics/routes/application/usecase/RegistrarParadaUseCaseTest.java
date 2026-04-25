@@ -79,7 +79,9 @@ class RegistrarParadaUseCaseTest {
         assertThat(resultado.getEstado()).isEqualTo(EstadoParada.EXITOSA);
         assertThat(resultado.getFotoEvidenciaUrl()).isEqualTo("http://foto.url");
         assertThat(resultado.getNombreReceptor()).isEqualTo("Pedro Pérez");
-        verify(integracionModulo1).publishPaqueteEntregado(eq(paqueteId), eq(rutaId), eq(ahora));
+        verify(integracionModulo1).publishPaqueteEntregado(
+                eq(paqueteId), eq(rutaId), eq(ahora),
+                eq("http://foto.url"), eq("http://firma.url"));
     }
 
     // ── Fallida ───────────────────────────────────────────────────────────────
@@ -110,14 +112,14 @@ class RegistrarParadaUseCaseTest {
         when(paradaRepository.guardar(any())).thenAnswer(inv -> inv.getArgument(0));
 
         RegistrarParadaCommand cmd = new RegistrarParadaCommand.Novedad(
-                paradaId, MotivoNovedad.DANIADO_EN_RUTA, ahora);
+                paradaId, MotivoNovedad.DAÑADO_EN_RUTA, ahora);
 
         Parada resultado = useCase.ejecutar(cmd);
 
         assertThat(resultado.getEstado()).isEqualTo(EstadoParada.NOVEDAD);
-        assertThat(resultado.getMotivoNovedad()).isEqualTo(MotivoNovedad.DANIADO_EN_RUTA);
+        assertThat(resultado.getMotivoNovedad()).isEqualTo(MotivoNovedad.DAÑADO_EN_RUTA);
         verify(integracionModulo1).publishNovedadGrave(
-                eq(paqueteId), eq(rutaId), eq("DANIADO_EN_RUTA"), eq(ahora));
+                eq(paqueteId), eq(rutaId), eq("DAÑADO_EN_RUTA"), eq(ahora));
     }
 
     // ── Errores ───────────────────────────────────────────────────────────────
