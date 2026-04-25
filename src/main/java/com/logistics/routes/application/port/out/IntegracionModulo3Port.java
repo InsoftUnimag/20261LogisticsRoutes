@@ -1,6 +1,6 @@
 package com.logistics.routes.application.port.out;
 
-import com.logistics.routes.application.usecase.RutaCerradaEvent;
+import com.logistics.routes.application.event.RutaCerradaEvent;
 
 /**
  * Puerto de salida hacia Módulo 3 (Liquidación).

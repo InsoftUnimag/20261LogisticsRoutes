@@ -10,6 +10,7 @@ import com.logistics.routes.domain.exception.DominioException;
 import com.logistics.routes.domain.exception.EmailDuplicadoException;
 import com.logistics.routes.domain.exception.FechaLimiteVencidaException;
 import com.logistics.routes.domain.exception.ParadaNoEncontradaException;
+import com.logistics.routes.domain.exception.ParadaSinPODException;
 import com.logistics.routes.domain.exception.PlacaDuplicadaException;
 import com.logistics.routes.domain.exception.RutaEstadoInvalidoException;
 import com.logistics.routes.domain.exception.RutaNoEncontradaException;
@@ -29,6 +30,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -118,6 +121,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleParadaNoEncontrada(ParadaNoEncontradaException ex) {
         return ErrorResponse.of("PARADA_NO_ENCONTRADA", ex.getMessage());
+    }
+
+    @ExceptionHandler(ParadaSinPODException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ErrorResponse handleParadaSinPOD(ParadaSinPODException ex) {
+        return ErrorResponse.of("PARADA_SIN_POD", ex.getMessage());
     }
 
     @ExceptionHandler(FechaLimiteVencidaException.class)
@@ -239,6 +248,21 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleAuthenticationException(org.springframework.security.core.AuthenticationException ex) {
         log.warn("Error de autenticación: {}", ex.getMessage());
         return ErrorResponse.of("UNAUTHORIZED", "Credenciales inválidas");
+    }
+
+    /**
+     * Maneja {@link ResponseStatusException} respetando el status code que la excepción declara.
+     * Sin este handler, el fallback genérico capturaría la excepción y retornaría 500
+     * en lugar del status original.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException ex) {
+        log.warn("ResponseStatusException: {} {}", ex.getStatusCode(), ex.getReason());
+        ErrorResponse body = ErrorResponse.of(
+                "STATUS_" + ex.getStatusCode().value(),
+                ex.getReason() != null ? ex.getReason() : "Error en la solicitud"
+        );
+        return ResponseEntity.status(ex.getStatusCode()).body(body);
     }
 
     /**
