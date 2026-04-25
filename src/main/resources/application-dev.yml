@@ -27,15 +27,17 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
-# Spring Cloud AWS — apunta a LocalStack
-spring.cloud.aws:
-  credentials:
-    access-key: test
-    secret-key: test
-  region:
-    static: us-east-1
-  sqs:
-    endpoint: http://localhost:4566
+  # Spring Cloud AWS — apunta a LocalStack para SQS.
+  # S3 está excluido a nivel @SpringBootApplication; AwsS3Config solo activa S3Client en perfil aws.
+  cloud:
+    aws:
+      credentials:
+        access-key: test
+        secret-key: test
+      region:
+        static: us-east-1
+      sqs:
+        endpoint: http://localhost:4566
 
 app:
   jwt:

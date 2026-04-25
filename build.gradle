@@ -50,8 +50,9 @@ dependencies {
     compileOnly          'org.projectlombok:lombok'
     annotationProcessor  'org.projectlombok:lombok'
 
-    // ── AWS SQS (Spring Cloud AWS) ────────────────────────────────────
+    // ── AWS SQS + S3 (Spring Cloud AWS) ───────────────────────────────
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs'
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
 
     // ── GeoHash ───────────────────────────────────────────────────────
     implementation "ch.hsr:geohash:${geohashVersion}"

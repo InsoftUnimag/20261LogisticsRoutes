@@ -24,14 +24,16 @@ spring:
       host: localhost
       port: 6370  # puerto diferente para evitar colisión — se mockea en tests
 
-spring.cloud.aws:
-  credentials:
-    access-key: test
-    secret-key: test
-  region:
-    static: us-east-1
-  sqs:
-    endpoint: http://localhost:4566
+  # S3 excluido a nivel @SpringBootApplication; solo perfil aws crea S3Client real.
+  cloud:
+    aws:
+      credentials:
+        access-key: test
+        secret-key: test
+      region:
+        static: us-east-1
+      sqs:
+        endpoint: http://localhost:4566
 
 app:
   jwt:
