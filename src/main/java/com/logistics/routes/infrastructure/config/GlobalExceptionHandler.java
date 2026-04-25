@@ -10,6 +10,7 @@ import com.logistics.routes.domain.exception.DominioException;
 import com.logistics.routes.domain.exception.EmailDuplicadoException;
 import com.logistics.routes.domain.exception.FechaLimiteVencidaException;
 import com.logistics.routes.domain.exception.ParadaNoEncontradaException;
+import com.logistics.routes.domain.exception.ParadaSinPODException;
 import com.logistics.routes.domain.exception.PlacaDuplicadaException;
 import com.logistics.routes.domain.exception.RutaEstadoInvalidoException;
 import com.logistics.routes.domain.exception.RutaNoEncontradaException;
@@ -118,6 +119,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleParadaNoEncontrada(ParadaNoEncontradaException ex) {
         return ErrorResponse.of("PARADA_NO_ENCONTRADA", ex.getMessage());
+    }
+
+    @ExceptionHandler(ParadaSinPODException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ErrorResponse handleParadaSinPOD(ParadaSinPODException ex) {
+        return ErrorResponse.of("PARADA_SIN_POD", ex.getMessage());
     }
 
     @ExceptionHandler(FechaLimiteVencidaException.class)
