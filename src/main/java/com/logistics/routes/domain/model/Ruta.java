@@ -109,6 +109,16 @@ public class Ruta {
         this.fechaHoraInicio = Instant.now();
     }
 
+    public void cerrar(EstadoRuta estadoCierre, TipoCierre tipoCierre) {
+        if (estado != EstadoRuta.EN_TRANSITO) {
+            throw new IllegalStateException(
+                    "Solo se puede cerrar desde EN_TRANSITO, estado actual: " + estado);
+        }
+        this.estado = estadoCierre;
+        this.fechaHoraCierre = Instant.now();
+        this.tipoCierre = tipoCierre;
+    }
+
     public void confirmar(UUID conductorId, UUID vehiculoId) {
         if (estado != EstadoRuta.LISTA_PARA_DESPACHO) {
             throw new IllegalStateException(
