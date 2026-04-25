@@ -40,6 +40,8 @@ app:
     solicitudes-ruta-queue: ${SQS_SOLICITUDES_RUTA_QUEUE}
     eventos-paquete-queue: ${SQS_EVENTOS_PAQUETE_QUEUE}
     cierre-ruta-queue: ${SQS_CIERRE_RUTA_QUEUE}
+  s3:
+    bucket-pod: ${S3_BUCKET_POD}
 
 logging:
   level:

@@ -3,6 +3,7 @@ package com.logistics.routes.infrastructure.adapter.out.storage;
 import com.logistics.routes.application.port.out.AlmacenamientoArchivoPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 @Component
+@Profile("!aws")
 public class LocalAlmacenamientoAdapter implements AlmacenamientoArchivoPort {
 
     private static final Logger log = LoggerFactory.getLogger(LocalAlmacenamientoAdapter.class);
