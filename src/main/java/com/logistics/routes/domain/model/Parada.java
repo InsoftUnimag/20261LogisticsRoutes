@@ -95,6 +95,7 @@ public class Parada {
 
     public void marcarExitosa(String fotoUrl, String firmaUrl,
                               String nombreReceptor, Instant fechaHoraAccion) {
+        validarTransicionDesdePendiente();
         if (fotoUrl == null || fotoUrl.isBlank()) {
             throw new ParadaSinPODException(this.paqueteId);
         }
@@ -107,6 +108,7 @@ public class Parada {
     }
 
     public void marcarFallida(MotivoNovedad motivo, Instant fechaHoraAccion) {
+        validarTransicionDesdePendiente();
         this.estado = EstadoParada.FALLIDA;
         this.motivoNovedad = motivo;
         this.fechaHoraGestion = fechaHoraAccion;
@@ -114,10 +116,18 @@ public class Parada {
     }
 
     public void marcarNovedad(MotivoNovedad tipoNovedad, Instant fechaHoraAccion) {
+        validarTransicionDesdePendiente();
         this.estado = EstadoParada.NOVEDAD;
         this.motivoNovedad = tipoNovedad;
         this.fechaHoraGestion = fechaHoraAccion;
         this.origen = OrigenParada.CONDUCTOR;
+    }
+
+    private void validarTransicionDesdePendiente() {
+        if (estado != EstadoParada.PENDIENTE) {
+            throw new IllegalStateException(
+                    "Solo se puede gestionar una parada en estado PENDIENTE; estado actual: " + estado);
+        }
     }
 
     public void marcarSinGestion(Instant fechaHoraAccion) {

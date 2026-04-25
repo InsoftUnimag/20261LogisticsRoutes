@@ -1,11 +1,13 @@
 package com.logistics.routes.infrastructure.adapter.out.integration;
 
 import com.logistics.routes.application.port.out.IntegracionModulo1Port;
+import com.logistics.routes.domain.enums.TipoCierre;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -31,9 +33,10 @@ public class InMemoryIntegracionModulo1Adapter implements IntegracionModulo1Port
     }
 
     @Override
-    public void publishPaqueteEntregado(UUID paqueteId, UUID rutaId, Instant fechaEntrega) {
-        log.info("[M1-EVENT] PAQUETE_ENTREGADO paquete_id={} ruta_id={} timestamp={}",
-                paqueteId, rutaId, fechaEntrega);
+    public void publishPaqueteEntregado(UUID paqueteId, UUID rutaId, Instant fechaEntrega,
+                                        String urlFoto, String urlFirma) {
+        log.info("[M1-EVENT] PAQUETE_ENTREGADO paquete_id={} ruta_id={} timestamp={} url_foto='{}' url_firma='{}'",
+                paqueteId, rutaId, fechaEntrega, urlFoto, urlFirma);
     }
 
     @Override
@@ -46,5 +49,11 @@ public class InMemoryIntegracionModulo1Adapter implements IntegracionModulo1Port
     public void publishNovedadGrave(UUID paqueteId, UUID rutaId, String tipoNovedad, Instant fechaAccion) {
         log.info("[M1-EVENT] NOVEDAD_GRAVE paquete_id={} ruta_id={} tipo='{}' timestamp={}",
                 paqueteId, rutaId, tipoNovedad, fechaAccion);
+    }
+
+    @Override
+    public void publishParadasSinGestionar(UUID rutaId, TipoCierre tipoCierre, List<UUID> paqueteIds) {
+        log.info("[M1-EVENT] PARADAS_SIN_GESTIONAR ruta_id={} tipo_cierre={} paquetes={}",
+                rutaId, tipoCierre, paqueteIds);
     }
 }

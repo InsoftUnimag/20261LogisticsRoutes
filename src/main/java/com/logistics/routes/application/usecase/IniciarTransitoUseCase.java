@@ -6,7 +6,7 @@ import com.logistics.routes.application.port.out.ParadaRepositoryPort;
 import com.logistics.routes.application.port.out.RutaRepositoryPort;
 import com.logistics.routes.domain.enums.EstadoParada;
 import com.logistics.routes.domain.enums.EstadoRuta;
-import com.logistics.routes.domain.exception.ConductorNoDisponibleException;
+import com.logistics.routes.domain.exception.ConductorNoAsignadoARutaException;
 import com.logistics.routes.domain.exception.RutaEstadoInvalidoException;
 import com.logistics.routes.domain.exception.RutaNoEncontradaException;
 import com.logistics.routes.domain.model.Ruta;
@@ -34,7 +34,7 @@ public class IniciarTransitoUseCase {
         }
 
         if (!command.conductorId().equals(ruta.getConductorId())) {
-            throw new ConductorNoDisponibleException(command.conductorId().toString());
+            throw new ConductorNoAsignadoARutaException(command.conductorId(), command.rutaId());
         }
 
         ruta.iniciarTransito();

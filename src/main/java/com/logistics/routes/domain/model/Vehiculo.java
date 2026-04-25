@@ -129,6 +129,11 @@ public class Vehiculo {
         this.estado = EstadoVehiculo.DISPONIBLE;
     }
 
+    public void marcarDisponible() {
+        this.estado = EstadoVehiculo.DISPONIBLE;
+        this.conductorId = null;
+    }
+
     public void marcarEnTransito() {
         if (estado != EstadoVehiculo.DISPONIBLE) {
             throw new VehiculoNoDisponibleException(id.toString());

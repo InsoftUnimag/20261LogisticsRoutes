@@ -39,7 +39,8 @@ public class RegistrarParadaUseCase {
                 parada.marcarExitosa(c.fotoUrl(), c.firmaUrl(), c.nombreReceptor(), c.fechaAccion());
                 paradaRepository.guardar(parada);
                 integracionModulo1.publishPaqueteEntregado(
-                        parada.getPaqueteId(), ruta.getId(), c.fechaAccion());
+                        parada.getPaqueteId(), ruta.getId(), c.fechaAccion(),
+                        c.fotoUrl(), c.firmaUrl());
             }
             case RegistrarParadaCommand.Fallida c -> {
                 parada.marcarFallida(c.motivo(), c.fechaAccion());

@@ -1,6 +1,8 @@
 package com.logistics.routes.infrastructure.config;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.logistics.routes.domain.exception.ConductorNoAsignadoARutaException;
+import com.logistics.routes.domain.exception.ParadasPendientesException;
 import com.logistics.routes.domain.exception.ConductorNoDisponibleException;
 import com.logistics.routes.domain.exception.ConductorNoEncontradoException;
 import com.logistics.routes.domain.exception.ConductorYaAsignadoException;
@@ -94,6 +96,12 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of("CONDUCTOR_NO_DISPONIBLE", ex.getMessage());
     }
 
+    @ExceptionHandler(ConductorNoAsignadoARutaException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleConductorNoAsignadoARuta(ConductorNoAsignadoARutaException ex) {
+        return ErrorResponse.of("CONDUCTOR_NO_ASIGNADO_A_RUTA", ex.getMessage());
+    }
+
     @ExceptionHandler(EmailDuplicadoException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleEmailDuplicado(EmailDuplicadoException ex) {
@@ -128,6 +136,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleRutaNoEnTransito(RutaNoEnTransitoException ex) {
         return ErrorResponse.of("RUTA_NO_EN_TRANSITO", ex.getMessage());
+    }
+
+    @ExceptionHandler(ParadasPendientesException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleParadasPendientes(ParadasPendientesException ex) {
+        return ErrorResponse.of("PARADAS_PENDIENTES", ex.getMessage());
     }
 
     /** Fallback para cualquier excepción de dominio no mapeada explícitamente. */

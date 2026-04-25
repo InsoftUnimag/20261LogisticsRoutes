@@ -1,6 +1,9 @@
 package com.logistics.routes.application.port.out;
 
+import com.logistics.routes.domain.enums.TipoCierre;
+
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -20,12 +23,16 @@ public interface IntegracionModulo1Port {
     /** Evento SPEC-08: paquete en tránsito al iniciar la ruta. */
     void publishPaqueteEnTransito(UUID paqueteId, UUID rutaId, Instant fechaHora);
 
-    /** Evento SPEC-08: paquete entregado exitosamente. */
-    void publishPaqueteEntregado(UUID paqueteId, UUID rutaId, Instant fechaEntrega);
+    /** Evento SPEC-08: paquete entregado exitosamente con evidencia POD (foto + firma). */
+    void publishPaqueteEntregado(UUID paqueteId, UUID rutaId, Instant fechaEntrega,
+                                 String urlFoto, String urlFirma);
 
     /** Evento SPEC-08: parada fallida con motivo. */
     void publishParadaFallida(UUID paqueteId, UUID rutaId, String motivo, Instant fechaAccion);
 
     /** Evento SPEC-08: novedad grave registrada por el conductor. */
     void publishNovedadGrave(UUID paqueteId, UUID rutaId, String tipoNovedad, Instant fechaAccion);
+
+    /** Evento #7 SPEC-08: ruta cerrada con paradas que quedaron sin gestionar. */
+    void publishParadasSinGestionar(UUID rutaId, TipoCierre tipoCierre, List<UUID> paqueteIds);
 }

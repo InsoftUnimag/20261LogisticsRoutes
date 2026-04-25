@@ -2,6 +2,7 @@ package com.logistics.routes.infrastructure.adapter.in.web;
 
 import com.logistics.routes.application.usecase.ConfirmarDespachoUseCase;
 import com.logistics.routes.application.usecase.ExcluirPaqueteRutaUseCase;
+import com.logistics.routes.application.usecase.ForzarCierreRutaUseCase;
 import com.logistics.routes.application.usecase.ListarRutasParaDespachoUseCase;
 import com.logistics.routes.application.usecase.ObtenerDetalleRutaUseCase;
 import com.logistics.routes.application.usecase.ObtenerDetalleRutaUseCase.Detalle;
@@ -15,7 +16,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,6 +40,7 @@ public class DespachoController {
     private final ConfirmarDespachoUseCase confirmarDespacho;
     private final ExcluirPaqueteRutaUseCase excluirPaquete;
     private final ObtenerDetalleRutaUseCase obtenerDetalle;
+    private final ForzarCierreRutaUseCase forzarCierre;
 
     @Operation(summary = "Listar rutas listas para despacho",
             description = "Retorna todas las rutas en estado LISTA_PARA_DESPACHO con su detalle y paradas ordenadas. Requiere rol DISPATCHER.")
@@ -90,14 +91,18 @@ public class DespachoController {
     }
 
     @Operation(summary = "Forzar cierre de una ruta",
-            description = "Cierra manualmente una ruta sin esperar al conductor. Stub hasta la implementación de F18.")
+            description = "Cierra la ruta EN_TRANSITO sin esperar al conductor, marcando las paradas pendientes "
+                    + "como SIN_GESTION. Publica PARADAS_SIN_GESTIONAR a M1 y RUTA_CERRADA a M3. Requiere rol DISPATCHER.")
     @ApiResponses({
-            @ApiResponse(responseCode = "501", description = "Funcionalidad no implementada aún — disponible en F18")
+            @ApiResponse(responseCode = "204", description = "Ruta cerrada forzosamente"),
+            @ApiResponse(responseCode = "404", description = "Ruta no encontrada"),
+            @ApiResponse(responseCode = "409", description = "La ruta no está en estado EN_TRANSITO")
     })
     @PostMapping("/rutas/{id}/forzar-cierre")
     @PreAuthorize("hasRole('DISPATCHER')")
-    public ResponseEntity<Void> forzarCierre(
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void forzarCierre(
             @Parameter(description = "ID de la ruta") @PathVariable UUID id) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        forzarCierre.ejecutar(id);
     }
 }
