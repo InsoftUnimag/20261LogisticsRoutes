@@ -48,4 +48,9 @@ public class ParadaJpaAdapter implements ParadaRepositoryPort {
                 .findByRutaIdAndPaqueteId(rutaId, paqueteId)
                 .map(ParadaMapper::toDomain);
     }
+
+    @Override
+    public Optional<Parada> buscarPorId(UUID paradaId) {
+        return jpaRepository.findById(paradaId).map(ParadaMapper::toDomain);
+    }
 }

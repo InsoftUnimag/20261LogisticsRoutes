@@ -15,4 +15,6 @@ public interface ParadaRepositoryPort {
     List<Parada> buscarPorRutaId(UUID rutaId);
 
     Optional<Parada> buscarPorRutaYPaquete(UUID rutaId, UUID paqueteId);
+
+    Optional<Parada> buscarPorId(UUID paradaId);
 }

@@ -19,4 +19,13 @@ public interface IntegracionModulo1Port {
 
     /** Evento SPEC-08: paquete en tránsito al iniciar la ruta. */
     void publishPaqueteEnTransito(UUID paqueteId, UUID rutaId, Instant fechaHora);
+
+    /** Evento SPEC-08: paquete entregado exitosamente. */
+    void publishPaqueteEntregado(UUID paqueteId, UUID rutaId, Instant fechaEntrega);
+
+    /** Evento SPEC-08: parada fallida con motivo. */
+    void publishParadaFallida(UUID paqueteId, UUID rutaId, String motivo, Instant fechaAccion);
+
+    /** Evento SPEC-08: novedad grave registrada por el conductor. */
+    void publishNovedadGrave(UUID paqueteId, UUID rutaId, String tipoNovedad, Instant fechaAccion);
 }

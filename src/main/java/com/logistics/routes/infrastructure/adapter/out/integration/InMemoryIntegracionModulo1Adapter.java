@@ -29,4 +29,22 @@ public class InMemoryIntegracionModulo1Adapter implements IntegracionModulo1Port
         log.info("[M1-EVENT] PAQUETE_EN_TRANSITO paquete_id={} ruta_id={} timestamp={}",
                 paqueteId, rutaId, fechaHora);
     }
+
+    @Override
+    public void publishPaqueteEntregado(UUID paqueteId, UUID rutaId, Instant fechaEntrega) {
+        log.info("[M1-EVENT] PAQUETE_ENTREGADO paquete_id={} ruta_id={} timestamp={}",
+                paqueteId, rutaId, fechaEntrega);
+    }
+
+    @Override
+    public void publishParadaFallida(UUID paqueteId, UUID rutaId, String motivo, Instant fechaAccion) {
+        log.info("[M1-EVENT] PARADA_FALLIDA paquete_id={} ruta_id={} motivo='{}' timestamp={}",
+                paqueteId, rutaId, motivo, fechaAccion);
+    }
+
+    @Override
+    public void publishNovedadGrave(UUID paqueteId, UUID rutaId, String tipoNovedad, Instant fechaAccion) {
+        log.info("[M1-EVENT] NOVEDAD_GRAVE paquete_id={} ruta_id={} tipo='{}' timestamp={}",
+                paqueteId, rutaId, tipoNovedad, fechaAccion);
+    }
 }

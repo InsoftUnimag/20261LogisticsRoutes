@@ -11,6 +11,7 @@ import com.logistics.routes.domain.exception.ParadaNoEncontradaException;
 import com.logistics.routes.domain.exception.PlacaDuplicadaException;
 import com.logistics.routes.domain.exception.RutaEstadoInvalidoException;
 import com.logistics.routes.domain.exception.RutaNoEncontradaException;
+import com.logistics.routes.domain.exception.RutaNoEnTransitoException;
 import com.logistics.routes.domain.exception.VehiculoEnTransitoException;
 import com.logistics.routes.domain.exception.VehiculoNoDisponibleException;
 import com.logistics.routes.domain.exception.VehiculoNoEncontradoException;
@@ -121,6 +122,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleRutaEstadoInvalido(RutaEstadoInvalidoException ex) {
         return ErrorResponse.of("RUTA_ESTADO_INVALIDO", ex.getMessage());
+    }
+
+    @ExceptionHandler(RutaNoEnTransitoException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleRutaNoEnTransito(RutaNoEnTransitoException ex) {
+        return ErrorResponse.of("RUTA_NO_EN_TRANSITO", ex.getMessage());
     }
 
     /** Fallback para cualquier excepción de dominio no mapeada explícitamente. */
