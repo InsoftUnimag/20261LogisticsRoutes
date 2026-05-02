@@ -1,5 +1,7 @@
 package com.logistics.routes.infrastructure.adapter.out.messaging;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logistics.routes.application.event.NovedadGraveEvent;
 import com.logistics.routes.application.event.PaqueteEnTransitoEvent;
 import com.logistics.routes.application.event.PaqueteEntregadoEvent;
@@ -9,7 +11,6 @@ import com.logistics.routes.application.event.ParadasSinGestionarEvent;
 import com.logistics.routes.application.port.out.IntegracionModulo1Port;
 import com.logistics.routes.domain.enums.TipoCierre;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,23 +21,22 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Implementación AWS SQS del puerto hacia Módulo 1.
- * Publica los eventos del ciclo de vida de paquetes (SPEC-08 sección 3) en la
- * cola configurada {@code app.sqs.eventos-paquete-queue}.
- * Solo activo bajo el perfil {@code aws}.
- */
 @Component
 @Profile("aws")
-@RequiredArgsConstructor
 public class SqsIntegracionModulo1Adapter implements IntegracionModulo1Port {
 
     private static final Logger log = LoggerFactory.getLogger(SqsIntegracionModulo1Adapter.class);
 
     private final SqsTemplate sqsTemplate;
+    private final ObjectMapper objectMapper;
+    private final String eventosPaqueteQueue;
 
-    @Value("${app.sqs.eventos-paquete-queue}")
-    private String eventosPaqueteQueue;
+    public SqsIntegracionModulo1Adapter(SqsTemplate sqsTemplate, ObjectMapper objectMapper,
+                                        @Value("${app.sqs.eventos-paquete-queue}") String eventosPaqueteQueue) {
+        this.sqsTemplate = sqsTemplate;
+        this.objectMapper = objectMapper;
+        this.eventosPaqueteQueue = eventosPaqueteQueue;
+    }
 
     @Override
     public void publishPaqueteExcluidoDespacho(UUID paqueteId, UUID rutaId, String motivo, Instant fechaHora) {
@@ -71,8 +71,14 @@ public class SqsIntegracionModulo1Adapter implements IntegracionModulo1Port {
                 "PARADAS_SIN_GESTIONAR");
     }
 
+    @SuppressWarnings("null") // writeValueAsString nunca retorna null; lanza JsonProcessingException si falla
     private void publicar(Object evento, String tipo) {
-        sqsTemplate.send(eventosPaqueteQueue, evento);
-        log.info("[M1-SQS] {} enviado a {}", tipo, eventosPaqueteQueue);
+        try {
+            String payload = objectMapper.writeValueAsString(evento);
+            sqsTemplate.send(eventosPaqueteQueue, payload);
+            log.info("[M1-SQS] {} enviado a {}", tipo, eventosPaqueteQueue);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Error serializando evento M1 " + tipo + ": " + evento, e);
+        }
     }
 }

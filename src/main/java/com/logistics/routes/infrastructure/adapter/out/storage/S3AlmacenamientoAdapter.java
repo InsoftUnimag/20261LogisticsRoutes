@@ -1,7 +1,6 @@
 package com.logistics.routes.infrastructure.adapter.out.storage;
 
 import com.logistics.routes.application.port.out.AlmacenamientoArchivoPort;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,24 +12,23 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.util.UUID;
 
-/**
- * Implementación AWS S3 del puerto de almacenamiento de archivos.
- * Sube fotos POD y firmas al bucket configurado en {@code app.s3.bucket-pod}
- * y retorna la URI {@code s3://bucket/key}. La presigned URL para acceso de
- * lectura se genera bajo demanda al consultar la parada.
- * Solo activo bajo el perfil {@code aws}.
- */
 @Component
 @Profile("aws")
-@RequiredArgsConstructor
 public class S3AlmacenamientoAdapter implements AlmacenamientoArchivoPort {
 
     private static final Logger log = LoggerFactory.getLogger(S3AlmacenamientoAdapter.class);
 
     private final S3Client s3Client;
+    private final String bucket;
+    private final String region;
 
-    @Value("${app.s3.bucket-pod}")
-    private String bucket;
+    public S3AlmacenamientoAdapter(S3Client s3Client,
+                                   @Value("${app.s3.bucket-pod}") String bucket,
+                                   @Value("${spring.cloud.aws.region.static:us-east-1}") String region) {
+        this.s3Client = s3Client;
+        this.bucket = bucket;
+        this.region = region;
+    }
 
     @Override
     public String almacenarFoto(UUID paradaId, byte[] foto, String contentType) {
@@ -43,17 +41,31 @@ public class S3AlmacenamientoAdapter implements AlmacenamientoArchivoPort {
     }
 
     private String almacenar(UUID paradaId, byte[] datos, String contentType, String prefijo) {
-        String key = "pod/" + prefijo + "s/" + paradaId + "/" + UUID.randomUUID();
+        String extension = resolverExtension(contentType);
+        String key = "paradas/" + paradaId + "/" + prefijo + "_" + UUID.randomUUID() + extension;
+        String ct = contentType != null ? contentType : "application/octet-stream";
+
         s3Client.putObject(
                 PutObjectRequest.builder()
                         .bucket(bucket)
                         .key(key)
-                        .contentType(contentType)
+                        .contentType(ct)
                         .build(),
                 RequestBody.fromBytes(datos)
         );
-        String uri = "s3://" + bucket + "/" + key;
-        log.info("[S3] {} subida a {}", prefijo, uri);
-        return uri;
+
+        String url = "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
+        log.info("[S3] {} subida a {}", prefijo, url);
+        return url;
+    }
+
+    private String resolverExtension(String contentType) {
+        if (contentType == null) return "";
+        return switch (contentType) {
+            case "image/jpeg" -> ".jpg";
+            case "image/png" -> ".png";
+            case "image/webp" -> ".webp";
+            default -> "";
+        };
     }
 }
