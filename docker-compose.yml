@@ -2,12 +2,14 @@
 # Entorno de desarrollo local — Sistema de Gestión de Rutas Logísticas
 #
 # Servicios incluidos:
-#   - postgres : PostgreSQL 17 (BD principal)
-#   - redis    : Redis 7       (ShedLock + caché)
+#   - postgres : PostgreSQL 17  (BD principal)
+#   - redis    : Redis 7        (ShedLock + caché)
+#   - app      : Spring Boot    (perfil prod en EC2 / dev en local)
 #
-# Arrancar:  docker compose up -d
-# Detener:   docker compose down
-# Logs:      docker compose logs -f
+# Arrancar:   docker compose up -d
+# Rebuild:    docker compose up -d --build
+# Detener:    docker compose down
+# Logs:       docker compose logs -f app
 # =============================================================================
 
 services:
@@ -19,13 +21,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB:       ${POSTGRES_DB}
-      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -40,10 +42,50 @@ services:
       - redis_data:/data
     command: redis-server --appendonly yes
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
+
+  app:
+    build: .
+    container_name: logistics-routes-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Perfil Spring activo
+      SPRING_PROFILES_ACTIVE: prod,aws
+
+      # Base de datos — apunta al contenedor postgres de este mismo compose
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Redis — apunta al contenedor redis de este mismo compose
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # AWS — región (credenciales las provee el IAM Role en EC2)
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+
+      # SQS — nombres de las colas
+      SQS_SOLICITUDES_RUTA_QUEUE: ${SQS_SOLICITUDES_RUTA_QUEUE}
+      SQS_EVENTOS_PAQUETE_QUEUE: ${SQS_EVENTOS_PAQUETE_QUEUE}
+      SQS_CIERRE_RUTA_QUEUE: ${SQS_CIERRE_RUTA_QUEUE}
+
+      # S3
+      S3_BUCKET_POD: ${S3_BUCKET_POD}
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:

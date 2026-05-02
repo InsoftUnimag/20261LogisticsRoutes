@@ -19,3 +19,6 @@ bin/
 .env.local
 .env.*.local
 !.env.example
+
+# ------    
+logistics-routes-key.pem

@@ -29,7 +29,7 @@ spring:
 # Spring Cloud AWS — usa la cadena de credenciales estándar de AWS (IAM role en EC2/ECS)
 spring.cloud.aws:
   region:
-    static: ${AWS_REGION:us-east-1}
+    static: ${AWS_REGION:us-east-2}
   # Sin access-key/secret-key: se resuelve con IAM role o variables de entorno AWS_*
 
 app:
