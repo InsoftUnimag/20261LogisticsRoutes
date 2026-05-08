@@ -47,9 +47,10 @@ public class VehiculoController {
         );
     }
 
-    @Operation(summary = "Listar todos los vehículos", description = "Obtiene la lista completa de vehículos. Requiere rol FLEET_ADMIN.")
+    @Operation(summary = "Listar todos los vehículos", description = "Obtiene la lista completa de vehículos. Requiere rol FLEET_ADMIN o DISPATCHER.")
     @ApiResponse(responseCode = "200", description = "Lista recuperada exitosamente")
     @GetMapping
+    @PreAuthorize("hasAnyRole('FLEET_ADMIN', 'DISPATCHER')")
     public List<VehiculoResponse> listar() {
         return consultarDisponibilidad.ejecutar().stream()
                 .map(VehiculoResponse::from)
