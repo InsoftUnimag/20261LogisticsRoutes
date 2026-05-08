@@ -4,6 +4,7 @@ import com.logistics.routes.application.usecase.AsignarVehiculoConductorUseCase;
 import com.logistics.routes.application.usecase.ConsultarHistorialConductorUseCase;
 import com.logistics.routes.application.usecase.DarDeBajaConductorUseCase;
 import com.logistics.routes.application.usecase.DesvincularVehiculoConductorUseCase;
+import com.logistics.routes.application.usecase.ListarConductoresUseCase;
 import com.logistics.routes.application.usecase.RegistrarConductorUseCase;
 import com.logistics.routes.infrastructure.dto.request.AsignacionRequest;
 import com.logistics.routes.infrastructure.dto.request.ConductorRequest;
@@ -31,6 +32,7 @@ import java.util.UUID;
 public class ConductorController {
 
     private final RegistrarConductorUseCase registrarConductor;
+    private final ListarConductoresUseCase listarConductores;
     private final AsignarVehiculoConductorUseCase asignarVehiculo;
     private final DesvincularVehiculoConductorUseCase desvincularVehiculo;
     private final DarDeBajaConductorUseCase darDeBajaConductor;
@@ -46,6 +48,15 @@ public class ConductorController {
     @ResponseStatus(HttpStatus.CREATED)
     public ConductorResponse registrar(@Valid @RequestBody ConductorRequest request) {
         return ConductorResponse.from(registrarConductor.ejecutar(request.toCommand()));
+    }
+
+    @Operation(summary = "Listar todos los conductores", description = "Obtiene la lista completa de conductores. Requiere rol FLEET_ADMIN.")
+    @ApiResponse(responseCode = "200", description = "Lista recuperada exitosamente")
+    @GetMapping
+    public List<ConductorResponse> listar() {
+        return listarConductores.ejecutar().stream()
+                .map(ConductorResponse::from)
+                .toList();
     }
 
     @Operation(summary = "Asignar vehículo a conductor")
