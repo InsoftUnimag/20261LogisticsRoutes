@@ -1,8 +1,10 @@
 package com.logistics.routes.infrastructure.dto.response;
 
 import com.logistics.routes.domain.enums.EstadoParada;
+import com.logistics.routes.domain.enums.MotivoNovedad;
 import com.logistics.routes.domain.model.Parada;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public record ParadaResponse(
@@ -12,7 +14,12 @@ public record ParadaResponse(
         String direccion,
         double latitud,
         double longitud,
-        EstadoParada estado
+        EstadoParada estado,
+        MotivoNovedad motivoNovedad,
+        Instant fechaHoraGestion,
+        String fotoEvidenciaUrl,
+        String firmaReceptorUrl,
+        String nombreReceptor
 ) {
     public static ParadaResponse from(Parada p) {
         return new ParadaResponse(
@@ -22,7 +29,12 @@ public record ParadaResponse(
                 p.getDireccion(),
                 p.getLatitud(),
                 p.getLongitud(),
-                p.getEstado()
+                p.getEstado(),
+                p.getMotivoNovedad(),
+                p.getFechaHoraGestion(),
+                p.getFotoEvidenciaUrl(),
+                p.getFirmaReceptorUrl(),
+                p.getNombreReceptor()
         );
     }
 }
