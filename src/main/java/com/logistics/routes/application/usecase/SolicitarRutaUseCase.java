@@ -90,11 +90,11 @@ public class SolicitarRutaUseCase {
         tipoActual.siguienteTipo().ifPresentOrElse(
                 ruta::setTipoVehiculoRequerido,
                 () -> {
-                    ruta.transicionarAListaParaDespacho();
+                    ruta.transicionarAListaParaDespacho("capacidad_maxima_alcanzada");
                     notificacion.notificarRutaListaParaDespacho(
                             ruta.getId(), ruta.getZona(),
                             ruta.getPesoAcumuladoKg(), ruta.getTipoVehiculoRequerido(),
-                            "capacidad_maxima_alcanzada");
+                            ruta.getMotivoDespacho());
                 });
     }
 }
