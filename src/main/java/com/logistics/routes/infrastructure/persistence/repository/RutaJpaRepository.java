@@ -22,5 +22,7 @@ public interface RutaJpaRepository extends JpaRepository<RutaEntity, UUID> {
 
     List<RutaEntity> findByEstadoAndFechaHoraInicioLessThanEqual(EstadoRuta estado, Instant limite);
 
+    List<RutaEntity> findByEstadoIn(Collection<EstadoRuta> estados);
+
     Optional<RutaEntity> findFirstByConductorIdAndEstadoIn(UUID conductorId, Collection<EstadoRuta> estados);
 }

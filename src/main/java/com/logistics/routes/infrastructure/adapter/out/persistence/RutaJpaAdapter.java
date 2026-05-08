@@ -22,6 +22,13 @@ public class RutaJpaAdapter implements RutaRepositoryPort {
     private static final Set<EstadoRuta> ESTADOS_ACTIVOS =
             Set.of(EstadoRuta.CONFIRMADA, EstadoRuta.EN_TRANSITO);
 
+    private static final Set<EstadoRuta> ESTADOS_ACTIVOS_DASHBOARD = Set.of(
+            EstadoRuta.CREADA,
+            EstadoRuta.LISTA_PARA_DESPACHO,
+            EstadoRuta.CONFIRMADA,
+            EstadoRuta.EN_TRANSITO
+    );
+
     private final RutaJpaRepository jpaRepository;
 
     @Override
@@ -46,6 +53,13 @@ public class RutaJpaAdapter implements RutaRepositoryPort {
     @Override
     public List<Ruta> buscarPorEstado(EstadoRuta estado) {
         return jpaRepository.findByEstado(estado).stream()
+                .map(RutaMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Ruta> buscarRutasActivas() {
+        return jpaRepository.findByEstadoIn(ESTADOS_ACTIVOS_DASHBOARD).stream()
                 .map(RutaMapper::toDomain)
                 .toList();
     }

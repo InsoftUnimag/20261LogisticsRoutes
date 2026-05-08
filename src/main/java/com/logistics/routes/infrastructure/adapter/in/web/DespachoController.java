@@ -3,6 +3,7 @@ package com.logistics.routes.infrastructure.adapter.in.web;
 import com.logistics.routes.application.usecase.ConfirmarDespachoUseCase;
 import com.logistics.routes.application.usecase.ExcluirPaqueteRutaUseCase;
 import com.logistics.routes.application.usecase.ForzarCierreRutaUseCase;
+import com.logistics.routes.application.usecase.ListarRutasActivasUseCase;
 import com.logistics.routes.application.usecase.ListarRutasParaDespachoUseCase;
 import com.logistics.routes.application.usecase.ObtenerDetalleRutaUseCase;
 import com.logistics.routes.application.usecase.ObtenerDetalleRutaUseCase.Detalle;
@@ -37,6 +38,7 @@ import java.util.UUID;
 public class DespachoController {
 
     private final ListarRutasParaDespachoUseCase listarRutas;
+    private final ListarRutasActivasUseCase listarRutasActivas;
     private final ConfirmarDespachoUseCase confirmarDespacho;
     private final ExcluirPaqueteRutaUseCase excluirPaquete;
     private final ObtenerDetalleRutaUseCase obtenerDetalle;
@@ -51,6 +53,21 @@ public class DespachoController {
     @PreAuthorize("hasRole('DISPATCHER')")
     public List<RutaDetalleResponse> listar() {
         return listarRutas.ejecutar().stream()
+                .map(ruta -> obtenerDetalle.ejecutar(ruta.getId()))
+                .map(d -> RutaDetalleResponse.from(d.ruta(), d.paradas()))
+                .toList();
+    }
+
+    @Operation(summary = "Listar rutas activas del panel del despachador",
+            description = "Retorna todas las rutas en estados CREADA, LISTA_PARA_DESPACHO, CONFIRMADA y EN_TRANSITO "
+                    + "con su detalle y paradas. Usado por el dashboard del despachador. Requiere rol DISPATCHER.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Listado obtenido exitosamente")
+    })
+    @GetMapping("/rutas/activas")
+    @PreAuthorize("hasRole('DISPATCHER')")
+    public List<RutaDetalleResponse> listarActivas() {
+        return listarRutasActivas.ejecutar().stream()
                 .map(ruta -> obtenerDetalle.ejecutar(ruta.getId()))
                 .map(d -> RutaDetalleResponse.from(d.ruta(), d.paradas()))
                 .toList();
