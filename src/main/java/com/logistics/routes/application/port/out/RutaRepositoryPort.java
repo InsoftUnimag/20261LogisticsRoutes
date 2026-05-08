@@ -26,4 +26,6 @@ public interface RutaRepositoryPort {
     List<Ruta> buscarRutasEnTransitoExcedidas(Instant limite);
 
     Optional<Ruta> buscarRutaActivaPorConductorId(UUID conductorId);
+
+    List<Ruta> buscarHistorialRutas();
 }

@@ -22,6 +22,12 @@ public class RutaJpaAdapter implements RutaRepositoryPort {
     private static final Set<EstadoRuta> ESTADOS_ACTIVOS =
             Set.of(EstadoRuta.CONFIRMADA, EstadoRuta.EN_TRANSITO);
 
+    private static final Set<EstadoRuta> ESTADOS_HISTORIAL = Set.of(
+            EstadoRuta.CERRADA_MANUAL,
+            EstadoRuta.CERRADA_AUTOMATICA,
+            EstadoRuta.CERRADA_FORZADA
+    );
+
     private static final Set<EstadoRuta> ESTADOS_ACTIVOS_DASHBOARD = Set.of(
             EstadoRuta.CREADA,
             EstadoRuta.LISTA_PARA_DESPACHO,
@@ -87,5 +93,12 @@ public class RutaJpaAdapter implements RutaRepositoryPort {
         return jpaRepository
                 .findFirstByConductorIdAndEstadoIn(conductorId, ESTADOS_ACTIVOS)
                 .map(RutaMapper::toDomain);
+    }
+
+    @Override
+    public List<Ruta> buscarHistorialRutas() {
+        return jpaRepository.findByEstadoInOrderByFechaHoraCierreDesc(ESTADOS_HISTORIAL).stream()
+                .map(RutaMapper::toDomain)
+                .toList();
     }
 }

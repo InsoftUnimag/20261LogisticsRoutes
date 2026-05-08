@@ -1,0 +1,19 @@
+package com.logistics.routes.application.usecase;
+
+import com.logistics.routes.application.port.out.RutaRepositoryPort;
+import com.logistics.routes.domain.model.Ruta;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class ListarHistorialRutasUseCase {
+
+    private final RutaRepositoryPort rutaRepository;
+
+    public List<Ruta> ejecutar() {
+        return rutaRepository.buscarHistorialRutas();
+    }
+}

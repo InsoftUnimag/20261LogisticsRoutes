@@ -3,6 +3,7 @@ package com.logistics.routes.infrastructure.adapter.in.web;
 import com.logistics.routes.application.usecase.ConfirmarDespachoUseCase;
 import com.logistics.routes.application.usecase.ExcluirPaqueteRutaUseCase;
 import com.logistics.routes.application.usecase.ForzarCierreRutaUseCase;
+import com.logistics.routes.application.usecase.ListarHistorialRutasUseCase;
 import com.logistics.routes.application.usecase.ListarRutasActivasUseCase;
 import com.logistics.routes.application.usecase.ListarRutasParaDespachoUseCase;
 import com.logistics.routes.application.usecase.ObtenerDetalleRutaUseCase;
@@ -39,6 +40,7 @@ public class DespachoController {
 
     private final ListarRutasParaDespachoUseCase listarRutas;
     private final ListarRutasActivasUseCase listarRutasActivas;
+    private final ListarHistorialRutasUseCase listarHistorialRutas;
     private final ConfirmarDespachoUseCase confirmarDespacho;
     private final ExcluirPaqueteRutaUseCase excluirPaquete;
     private final ObtenerDetalleRutaUseCase obtenerDetalle;
@@ -68,6 +70,21 @@ public class DespachoController {
     @PreAuthorize("hasRole('DISPATCHER')")
     public List<RutaDetalleResponse> listarActivas() {
         return listarRutasActivas.ejecutar().stream()
+                .map(ruta -> obtenerDetalle.ejecutar(ruta.getId()))
+                .map(d -> RutaDetalleResponse.from(d.ruta(), d.paradas()))
+                .toList();
+    }
+
+    @Operation(summary = "Listar historial de rutas cerradas",
+            description = "Retorna todas las rutas en estado CERRADA_MANUAL, CERRADA_AUTOMATICA o CERRADA_FORZADA "
+                    + "con su detalle y paradas, ordenadas por fecha de cierre más reciente. Requiere rol DISPATCHER.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Historial obtenido exitosamente")
+    })
+    @GetMapping("/rutas/historial")
+    @PreAuthorize("hasRole('DISPATCHER')")
+    public List<RutaDetalleResponse> listarHistorial() {
+        return listarHistorialRutas.ejecutar().stream()
                 .map(ruta -> obtenerDetalle.ejecutar(ruta.getId()))
                 .map(d -> RutaDetalleResponse.from(d.ruta(), d.paradas()))
                 .toList();
