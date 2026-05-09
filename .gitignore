@@ -21,3 +21,4 @@ bin/
 !.env.example
 
 logistics-routes-key.pem
+memory

@@ -45,6 +45,7 @@ class ActualizarVehiculoUseCaseTest {
     private Vehiculo vehiculoEnTransito() {
         Vehiculo v = vehiculoDisponible();
         v.asignarConductor(UUID.randomUUID());
+        v.marcarEnTransito();
         return v;
     }
 
