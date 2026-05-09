@@ -51,7 +51,7 @@ class IniciarTransitoUseCaseTest {
         return Ruta.reconstituir(rutaId, "d3gpz", EstadoRuta.CONFIRMADA, 120.0,
                 TipoVehiculo.MOTO, vehiculoId, conductorId,
                 Instant.now().minusSeconds(3600), Instant.now().plusSeconds(7200),
-                null, null, null);
+                null, null, null, null);
     }
 
     @Test
@@ -107,7 +107,7 @@ class IniciarTransitoUseCaseTest {
         Ruta enTransito = Ruta.reconstituir(rutaId, "d3gpz", EstadoRuta.EN_TRANSITO, 120.0,
                 TipoVehiculo.MOTO, vehiculoId, conductorId,
                 Instant.now().minusSeconds(3600), Instant.now().plusSeconds(7200),
-                Instant.now().minusSeconds(1800), null, null);
+                Instant.now().minusSeconds(1800), null, null, null);
         when(rutaRepository.buscarPorId(rutaId)).thenReturn(Optional.of(enTransito));
 
         assertThatThrownBy(() -> useCase.ejecutar(new IniciarTransitoCommand(rutaId, conductorId)))

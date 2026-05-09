@@ -60,7 +60,7 @@ class RegistrarParadaUseCaseTest {
         return Ruta.reconstituir(rutaId, "d3gpz", EstadoRuta.EN_TRANSITO, 80.0,
                 TipoVehiculo.MOTO, UUID.randomUUID(), UUID.randomUUID(),
                 Instant.now().minusSeconds(7200), Instant.now().plusSeconds(3600),
-                Instant.now().minusSeconds(3600), null, null);
+                Instant.now().minusSeconds(3600), null, null, null);
     }
 
     // ── Exitosa ───────────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ class RegistrarParadaUseCaseTest {
         Ruta confirmada = Ruta.reconstituir(rutaId, "d3gpz", EstadoRuta.CONFIRMADA, 80.0,
                 TipoVehiculo.MOTO, UUID.randomUUID(), UUID.randomUUID(),
                 Instant.now().minusSeconds(7200), Instant.now().plusSeconds(3600),
-                null, null, null);
+                null, null, null, null);
         when(paradaRepository.buscarPorId(paradaId)).thenReturn(Optional.of(paradaPendiente()));
         when(rutaRepository.buscarPorId(rutaId)).thenReturn(Optional.of(confirmada));
 

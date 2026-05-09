@@ -44,7 +44,7 @@ class ConsultarRutaActivaUseCaseTest {
         Ruta ruta = Ruta.reconstituir(rutaId, "d3gpz", EstadoRuta.EN_TRANSITO, 120.0,
                 TipoVehiculo.MOTO, UUID.randomUUID(), conductorId,
                 Instant.now().minusSeconds(3600), Instant.now().plusSeconds(7200),
-                Instant.now().minusSeconds(1800), null, null);
+                Instant.now().minusSeconds(1800), null, null, null);
 
         Parada p1 = Parada.reconstituir(UUID.randomUUID(), rutaId, UUID.randomUUID(), 2,
                 "Calle 10", 11.24, -74.21, null, null, null, EstadoParada.PENDIENTE, 

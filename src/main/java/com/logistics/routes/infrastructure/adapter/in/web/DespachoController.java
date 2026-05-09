@@ -6,6 +6,7 @@ import com.logistics.routes.application.usecase.ForzarCierreRutaUseCase;
 import com.logistics.routes.application.usecase.ListarHistorialRutasUseCase;
 import com.logistics.routes.application.usecase.ListarRutasActivasUseCase;
 import com.logistics.routes.application.usecase.ListarRutasParaDespachoUseCase;
+import com.logistics.routes.application.usecase.MarcarListaParaDespachoUseCase;
 import com.logistics.routes.application.usecase.ObtenerDetalleRutaUseCase;
 import com.logistics.routes.application.usecase.ObtenerDetalleRutaUseCase.Detalle;
 import com.logistics.routes.infrastructure.dto.request.ConfirmarDespachoRequest;
@@ -41,6 +42,7 @@ public class DespachoController {
     private final ListarRutasParaDespachoUseCase listarRutas;
     private final ListarRutasActivasUseCase listarRutasActivas;
     private final ListarHistorialRutasUseCase listarHistorialRutas;
+    private final MarcarListaParaDespachoUseCase marcarListaParaDespacho;
     private final ConfirmarDespachoUseCase confirmarDespacho;
     private final ExcluirPaqueteRutaUseCase excluirPaquete;
     private final ObtenerDetalleRutaUseCase obtenerDetalle;
@@ -88,6 +90,24 @@ public class DespachoController {
                 .map(ruta -> obtenerDetalle.ejecutar(ruta.getId()))
                 .map(d -> RutaDetalleResponse.from(d.ruta(), d.paradas()))
                 .toList();
+    }
+
+    @Operation(summary = "Marcar ruta como lista para despacho",
+            description = "Acción manual del despachador para transicionar una ruta de CREADA a LISTA_PARA_DESPACHO. "
+                    + "Equivale al trigger automático de los schedulers de capacidad/vencimiento, pero disparado por el rol DISPATCHER. "
+                    + "Notifica al despachador. Requiere rol DISPATCHER.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Ruta marcada como lista para despacho"),
+            @ApiResponse(responseCode = "404", description = "Ruta no encontrada"),
+            @ApiResponse(responseCode = "409", description = "La ruta no está en estado CREADA")
+    })
+    @PostMapping("/rutas/{id}/listar-para-despacho")
+    @PreAuthorize("hasRole('DISPATCHER')")
+    public RutaDetalleResponse marcarListaParaDespacho(
+            @Parameter(description = "ID de la ruta") @PathVariable UUID id) {
+        marcarListaParaDespacho.ejecutar(id);
+        Detalle d = obtenerDetalle.ejecutar(id);
+        return RutaDetalleResponse.from(d.ruta(), d.paradas());
     }
 
     @Operation(summary = "Confirmar despacho de una ruta",
