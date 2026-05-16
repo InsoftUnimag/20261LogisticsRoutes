@@ -11,7 +11,7 @@
 | # | Emisor   | Receptor | Tipo      | Disparador                                                      |
 |---|----------|----------|-----------|-----------------------------------------------------------------|
 | 1 | Módulo 1 | Módulo 2 | Asíncrono | Paquete alcanza estado `Recibido en Sede`                       |
-| 2 | Módulo 2 | Módulo 1 | Asincrono | 'ruta_id'                                                       |
+| 2 | Módulo 2 | Módulo 1 | Asíncrono | M2 asigna el paquete a una ruta al recibir `SOLICITAR_RUTA`     |
 | 3 | Módulo 2 | Módulo 1 | Asíncrono | Conductor confirma inicio de tránsito                           |
 | 4 | Módulo 2 | Módulo 1 | Asíncrono | Conductor registra entrega exitosa                              |
 | 5 | Módulo 2 | Módulo 1 | Asíncrono | Conductor registra parada fallida                               |
@@ -45,16 +45,38 @@
 }
 ```
 
-### Respuesta:
-{
-    "ruta_id": "UUID" 
-}
-
 ### Notas
 - Si `fecha_limite_entrega` ya venció al recibir el evento, el Módulo 2 descarta la solicitud y notifica al Despachador Logístico.
+- La respuesta con el `ruta_id` asignado se envía de forma asíncrona en una cola dedicada (ver sección 3).
+
 ---
 
-## 3. Módulo 2 → Módulo 1: Eventos de Estado de Paquete
+## 3. Módulo 2 → Módulo 1: Respuesta de Asignación de Ruta
+
+**Tipo:** Evento asíncrono  
+**Cola SQS:** `respuestas-ruta-queue` *(cola dedicada, M2 produce — M1 consume)*  
+**Disparador:** El Módulo 2 asigna exitosamente el paquete recibido vía `SOLICITAR_RUTA` a una ruta existente o recién creada.  
+**Acción esperada en M1:** Asociar el `ruta_id` al paquete para poder rastrear los eventos de estado posteriores.
+
+### Payload del evento
+
+```json
+{
+  "tipo_evento": "RUTA_ASIGNADA",
+  "paquete_id": "UUID",
+  "ruta_id": "UUID",
+  "fecha_hora_evento": "ISO8601"
+}
+```
+
+### Notas
+- El campo `paquete_id` actúa como correlación con el mensaje `SOLICITAR_RUTA` original.
+- M1 **no debe** esperar esta respuesta de forma síncrona; debe procesar el mensaje cuando llegue a la cola `respuestas-ruta-queue`.
+- Si M2 rechaza la solicitud (ej: `fecha_limite_entrega` vencida), **no** se emite este evento.
+
+---
+
+## 5. Módulo 2 → Módulo 1: Eventos de Estado de Paquete
 
 **Tipo:** Eventos asíncronos (sin respuesta esperada)  
 **Descripción:** El Módulo 2 notifica al Módulo 1 cada vez que el estado de un paquete cambia como resultado de la operación en campo o del despacho.
@@ -161,7 +183,7 @@
 }
 ```
 
-## 4. Módulo 2 → Módulo 3: Cierre de Ruta
+## 6. Módulo 2 → Módulo 3: Cierre de Ruta
 
 **Tipo:** Evento asíncrono (sin respuesta esperada)  
 **Disparador:** Cierre de ruta (manual, automático o forzado por despachador).  
@@ -201,7 +223,7 @@
 
 ---
 
-## 5. Reglas de Negocio Compartidas
+## 7. Reglas de Negocio Compartidas
 
 ### Estados de Ruta
 Todos los módulos deben reconocer los siguientes estados de ruta como válidos:
