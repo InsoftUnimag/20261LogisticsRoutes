@@ -193,21 +193,20 @@
 {
   "tipo_evento": "RUTA_CERRADA",
   "ruta_id": "UUID",
-  "tipo_cierre": "MANUAL | AUTOMATICO | FORZADO_DESPACHADOR",
   "fecha_hora_inicio_transito": "ISO8601",
   "fecha_hora_cierre": "ISO8601",
   "conductor": {
     "conductor_id": "UUID",
     "nombre": "string",
-    "modelo_contrato": "Recorrido completo | Por Parada Realizada"  
+    "modelo_contrato": "Recorrido completo | Por Parada Realizada"
   },
   "vehiculo": {
     "vehiculo_id": "UUID",
-    "placa": "string",
     "tipo": "MOTO | VAN | NHR | TURBO"
   },
   "paradas": [
     {
+      "parada_id": "UUID",
       "paquete_id": "UUID",
       "estado": "EXITOSA | FALLIDA | NOVEDAD | SIN_GESTION_CONDUCTOR",
       "motivo_no_entrega": "CLIENTE_AUSENTE | DIRECCION_INCORRECTA | RECHAZADO_POR_CLIENTE | ZONA_DIFICIL_ACCESO | DAÑADO_EN_RUTA | EXTRAVIADO | DEVOLUCION | null",

@@ -219,8 +219,7 @@ class CerrarRutaManualUseCaseTest {
         RutaCerradaEvent event = eventCaptor.getValue();
 
         assertThat(event.tipoEvento()).isEqualTo("RUTA_CERRADA");
-        assertThat(event.tipoCierre()).isEqualTo(TipoCierre.MANUAL.name());
-        assertThat(event.conductor().modeloContrato()).isEqualTo(ModeloContrato.POR_PARADA.name());
+        assertThat(event.conductor().modeloContrato()).isEqualTo(ModeloContrato.POR_PARADA.descripcion());
         assertThat(event.conductor().nombre()).isEqualTo("Ana López");
     }
 }

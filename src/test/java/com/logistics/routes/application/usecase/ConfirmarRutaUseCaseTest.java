@@ -65,12 +65,14 @@ class ConfirmarRutaUseCaseTest {
         UUID conductorId = UUID.randomUUID();
         UUID vehiculoId = UUID.randomUUID();
 
-        // Conductor activo y vehículo disponible del tipo que requiere la ruta
+        // Conductor activo y vehículo disponible del tipo que requiere la ruta,
+        // emparejados previamente por el FLEET_ADMIN
         when(conductor.getEstado()).thenReturn(EstadoConductor.ACTIVO);
         when(conductor.getId()).thenReturn(conductorId);
         when(vehiculo.getEstado()).thenReturn(EstadoVehiculo.DISPONIBLE);
         when(vehiculo.getTipo()).thenReturn(ruta.getTipoVehiculoRequerido());
         when(vehiculo.getId()).thenReturn(vehiculoId);
+        when(vehiculo.getConductorId()).thenReturn(conductorId);
 
         when(rutaRepository.buscarPorId(ruta.getId())).thenReturn(Optional.of(ruta));
         when(conductorRepository.buscarPorId(conductorId)).thenReturn(Optional.of(conductor));
@@ -109,13 +111,14 @@ class ConfirmarRutaUseCaseTest {
         UUID conductorId = UUID.randomUUID();
         UUID vehiculoId = UUID.randomUUID();
 
-        // Conductor y vehículo válidos — el error debe venir de la transición de estado
-        // de la ruta
+        // Conductor y vehículo válidos y emparejados — el error debe venir de la
+        // transición de estado de la ruta
         when(conductor.getEstado()).thenReturn(EstadoConductor.ACTIVO);
         when(conductor.getId()).thenReturn(conductorId);
         when(vehiculo.getEstado()).thenReturn(EstadoVehiculo.DISPONIBLE);
         when(vehiculo.getTipo()).thenReturn(ruta.getTipoVehiculoRequerido());
         when(vehiculo.getId()).thenReturn(vehiculoId);
+        when(vehiculo.getConductorId()).thenReturn(conductorId);
 
         when(rutaRepository.buscarPorId(ruta.getId())).thenReturn(Optional.of(ruta));
         when(conductorRepository.buscarPorId(conductorId)).thenReturn(Optional.of(conductor));

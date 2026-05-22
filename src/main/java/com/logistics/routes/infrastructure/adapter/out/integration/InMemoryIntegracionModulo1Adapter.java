@@ -8,6 +8,7 @@ import com.logistics.routes.application.event.PaqueteEntregadoEvent;
 import com.logistics.routes.application.event.PaqueteExcluidoDespachoEvent;
 import com.logistics.routes.application.event.ParadaFallidaEvent;
 import com.logistics.routes.application.event.ParadasSinGestionarEvent;
+import com.logistics.routes.application.event.RutaAsignadaEvent;
 import com.logistics.routes.application.port.out.IntegracionModulo1Port;
 import com.logistics.routes.domain.enums.TipoCierre;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,11 @@ public class InMemoryIntegracionModulo1Adapter implements IntegracionModulo1Port
     private static final Logger log = LoggerFactory.getLogger(InMemoryIntegracionModulo1Adapter.class);
 
     private final ObjectMapper objectMapper;
+
+    @Override
+    public void publishRutaAsignada(UUID paqueteId, UUID rutaId, Instant fechaHora) {
+        publicar(RutaAsignadaEvent.of(paqueteId, rutaId, fechaHora));
+    }
 
     @Override
     public void publishPaqueteExcluidoDespacho(UUID paqueteId, UUID rutaId, String motivo, Instant fechaHora) {

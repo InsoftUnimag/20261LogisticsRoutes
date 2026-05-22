@@ -63,7 +63,7 @@ class PlanificacionIntegrationTest {
     private SolicitarRutaRequest requestValido(double pesoKg, double lat, double lon) {
         return new SolicitarRutaRequest(
                 UUID.randomUUID(), pesoKg, lat, lon,
-                "Calle 72 #10-25, Bogotá",
+                new SolicitarRutaRequest.DireccionDto("Calle 72 #10-25, Bogotá"),
                 "GENERAL", "EFECTIVO",
                 Instant.now().plus(3, ChronoUnit.DAYS)
         );
@@ -152,7 +152,8 @@ class PlanificacionIntegrationTest {
         // Given: paquete con fechaLimiteEntrega en el pasado
         SolicitarRutaRequest request = new SolicitarRutaRequest(
                 UUID.randomUUID(), 5.0, LAT, LON,
-                "Calle 72 #10-25, Bogotá", "GENERAL", "EFECTIVO",
+                new SolicitarRutaRequest.DireccionDto("Calle 72 #10-25, Bogotá"),
+                "GENERAL", "EFECTIVO",
                 Instant.now().minus(1, ChronoUnit.HOURS)
         );
         String body = objectMapper.writeValueAsString(request);
@@ -175,7 +176,7 @@ class PlanificacionIntegrationTest {
                   "pesoKg": 5.0,
                   "latitud": 4.7109,
                   "longitud": -74.0721,
-                  "direccion": "Calle 72"
+                  "direccion": { "direccion": "Calle 72" }
                 }
                 """;
 

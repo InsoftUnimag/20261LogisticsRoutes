@@ -33,11 +33,11 @@ class SqsIntegracionModulo3AdapterTest {
     @Test
     void publishRutaCerrada_envia_evento_completo_a_la_cola_de_cierre() {
         RutaCerradaEvent event = new RutaCerradaEvent(
-                "RUTA_CERRADA", UUID.randomUUID(), "MANUAL",
+                "RUTA_CERRADA", UUID.randomUUID(),
                 Instant.parse("2026-04-22T08:00:00Z"),
                 Instant.parse("2026-04-22T17:30:00Z"),
-                new RutaCerradaEvent.ConductorInfo(UUID.randomUUID(), "Juan", "RECORRIDO_COMPLETO"),
-                new RutaCerradaEvent.VehiculoInfo(UUID.randomUUID(), "MNT478", "MOTO"),
+                new RutaCerradaEvent.ConductorInfo(UUID.randomUUID(), "Juan", "Recorrido completo"),
+                new RutaCerradaEvent.VehiculoInfo(UUID.randomUUID(), "MOTO"),
                 List.of()
         );
 

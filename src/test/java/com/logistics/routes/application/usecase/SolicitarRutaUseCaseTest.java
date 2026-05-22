@@ -1,6 +1,7 @@
 package com.logistics.routes.application.usecase;
 
 import com.logistics.routes.application.command.SolicitarRutaCommand;
+import com.logistics.routes.application.port.out.IntegracionModulo1Port;
 import com.logistics.routes.application.port.out.NotificacionDespachadorPort;
 import com.logistics.routes.application.port.out.ParadaRepositoryPort;
 import com.logistics.routes.application.port.out.RutaRepositoryPort;
@@ -39,12 +40,13 @@ class SolicitarRutaUseCaseTest {
     @Mock ParadaRepositoryPort paradaRepository;
     @Mock NotificacionDespachadorPort notificacion;
     @Mock RutaCreadorTransaccional rutaCreador;
+    @Mock IntegracionModulo1Port modulo1Port;
 
     SolicitarRutaUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new SolicitarRutaUseCase(rutaRepository, paradaRepository, notificacion, rutaCreador);
+        useCase = new SolicitarRutaUseCase(rutaRepository, paradaRepository, notificacion, rutaCreador, modulo1Port);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -178,6 +180,29 @@ class SolicitarRutaUseCaseTest {
         verify(rutaRepository, never()).guardar(any());
         verify(paradaRepository, never()).guardar(any());
         verify(notificacion, times(1)).notificarAlertaPrioritaria(any());
+
+        // SPEC-08 §3: si M2 rechaza la solicitud, NO se emite RUTA_ASIGNADA
+        verify(modulo1Port, never()).publishRutaAsignada(any(), any(), any());
+    }
+
+    @Test
+    void emite_ruta_asignada_a_m1_tras_asignar_paquete_exitosamente() {
+        // Given: ninguna ruta CREADA en la zona, paquete válido
+        ZonaGeografica zona = ZonaGeografica.from(LAT, LON);
+        Ruta nueva = Ruta.nueva(zona.hash(), Instant.now().plus(5, ChronoUnit.DAYS));
+        SolicitarRutaCommand command = commandValido(3.0);
+
+        when(rutaRepository.buscarRutaActivaPorZona(zona)).thenReturn(Optional.empty());
+        when(rutaCreador.guardarNueva(any())).thenReturn(nueva);
+        when(rutaRepository.guardar(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(paradaRepository.guardar(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // When
+        useCase.ejecutar(command);
+
+        // Then: RUTA_ASIGNADA enviado a M1 con paqueteId y rutaId correctos
+        verify(modulo1Port, times(1)).publishRutaAsignada(
+                eq(command.paqueteId()), eq(nueva.getId()), any(Instant.class));
     }
 
     @Test

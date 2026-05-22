@@ -6,6 +6,7 @@ import com.logistics.routes.application.event.PaqueteEntregadoEvent;
 import com.logistics.routes.application.event.PaqueteExcluidoDespachoEvent;
 import com.logistics.routes.application.event.ParadaFallidaEvent;
 import com.logistics.routes.application.event.ParadasSinGestionarEvent;
+import com.logistics.routes.application.event.RutaAsignadaEvent;
 import com.logistics.routes.application.port.out.IntegracionModulo1Port;
 import com.logistics.routes.domain.enums.TipoCierre;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
@@ -37,6 +38,17 @@ public class SqsIntegracionModulo1Adapter implements IntegracionModulo1Port {
 
     @Value("${app.sqs.eventos-paquete-queue}")
     private String eventosPaqueteQueue;
+
+    @Value("${app.sqs.respuestas-ruta-queue}")
+    private String respuestasRutaQueue;
+
+    @Override
+    public void publishRutaAsignada(UUID paqueteId, UUID rutaId, Instant fechaHora) {
+        RutaAsignadaEvent evento = RutaAsignadaEvent.of(paqueteId, rutaId, fechaHora);
+        sqsTemplate.send(respuestasRutaQueue, evento);
+        log.info("[M1-SQS] RUTA_ASIGNADA enviado a {}: paqueteId={} rutaId={}",
+                respuestasRutaQueue, paqueteId, rutaId);
+    }
 
     @Override
     public void publishPaqueteExcluidoDespacho(UUID paqueteId, UUID rutaId, String motivo, Instant fechaHora) {
