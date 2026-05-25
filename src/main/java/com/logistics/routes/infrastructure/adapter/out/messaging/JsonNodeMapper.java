@@ -4,11 +4,29 @@ import java.io.IOException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+/**
+ * Utilidad estática para serializar y deserializar entre objetos Java y {@link JsonNode}.
+ * <p>
+ * El {@link ObjectMapper} interno está configurado igual que Spring en producción
+ * (vía {@code JacksonAutoConfiguration}):
+ * <ul>
+ *   <li>{@link JavaTimeModule} registrado para soporte de {@code Instant}, {@code LocalDate}, etc.</li>
+ *   <li>{@link SerializationFeature#WRITE_DATES_AS_TIMESTAMPS} deshabilitado para que las
+ *       fechas se serialicen como strings ISO-8601 ({@code "2026-04-22T17:30:00Z"}) en lugar
+ *       de timestamps numéricos.</li>
+ * </ul>
+ * El naming snake_case se aplica por clase con {@code @JsonNaming(SnakeCaseStrategy.class)}
+ * en los eventos del contrato — no se fuerza globalmente para no afectar a otros DTOs.
+ */
 public class JsonNodeMapper {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     /**
      * Convierte cualquier objeto Java a JsonNode

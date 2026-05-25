@@ -1,8 +1,6 @@
 package com.logistics.routes.infrastructure.adapter.out.messaging;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.logistics.routes.application.event.RutaCerradaEvent;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,15 +26,11 @@ class SqsIntegracionModulo3AdapterTest {
 
     @Mock SqsTemplate sqsTemplate;
 
-    // ObjectMapper con JavaTimeModule igual que Spring configura en producción
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule());
-
     SqsIntegracionModulo3Adapter adapter;
 
     @BeforeEach
     void setUp() {
-        adapter = new SqsIntegracionModulo3Adapter(sqsTemplate, objectMapper);
+        adapter = new SqsIntegracionModulo3Adapter(sqsTemplate);
         ReflectionTestUtils.setField(adapter, "cierreRutaQueue", QUEUE);
     }
 
