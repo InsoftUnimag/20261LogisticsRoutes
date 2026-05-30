@@ -61,6 +61,15 @@ public class ConductorController {
         return ConductorResponse.from(registrarConductor.ejecutar(request.toCommand()));
     }
 
+    @Operation(summary = "Listar todos los conductores", description = "Obtiene la lista completa de conductores. Requiere rol FLEET_ADMIN.")
+    @ApiResponse(responseCode = "200", description = "Lista recuperada exitosamente")
+    @GetMapping
+    public List<ConductorResponse> listar() {
+        return listarConductores.ejecutar().stream()
+                .map(ConductorResponse::from)
+                .toList();
+    }
+
     @Operation(summary = "Asignar vehículo a conductor")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Asignación exitosa"),
