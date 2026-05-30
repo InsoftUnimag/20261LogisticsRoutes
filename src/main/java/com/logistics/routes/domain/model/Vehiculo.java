@@ -119,9 +119,14 @@ public class Vehiculo {
         this.estado = EstadoVehiculo.INACTIVO;
     }
 
+    /**
+     * Vincula un conductor al vehículo (responsabilidad del FLEET_ADMIN).
+     * No cambia el estado — el vehículo permanece DISPONIBLE listo para
+     * planificación. La transición a EN_TRANSITO la hace el DISPATCHER al
+     * confirmar despacho de una ruta vía {@link #marcarEnTransito()}.
+     */
     public void asignarConductor(UUID conductorId) {
         this.conductorId = conductorId;
-        this.estado = EstadoVehiculo.EN_TRANSITO;
     }
 
     public void desvincularConductor() {

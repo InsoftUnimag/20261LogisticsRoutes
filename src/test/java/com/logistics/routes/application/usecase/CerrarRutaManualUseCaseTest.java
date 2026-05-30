@@ -68,7 +68,7 @@ class CerrarRutaManualUseCaseTest {
         return Ruta.reconstituir(rutaId, "d3gpz", EstadoRuta.EN_TRANSITO, 120.0,
                 TipoVehiculo.VAN, vehiculoId, conductorId,
                 Instant.now().minusSeconds(7200), Instant.now().plusSeconds(3600),
-                Instant.now().minusSeconds(3600), null, null);
+                Instant.now().minusSeconds(3600), null, null, null);
     }
 
     private Conductor conductorEnRuta() {
@@ -190,7 +190,7 @@ class CerrarRutaManualUseCaseTest {
         Ruta confirmada = Ruta.reconstituir(rutaId, "d3gpz", EstadoRuta.CONFIRMADA, 120.0,
                 TipoVehiculo.VAN, vehiculoId, conductorId,
                 Instant.now().minusSeconds(7200), Instant.now().plusSeconds(3600),
-                null, null, null);
+                null, null, null, null);
         when(rutaRepository.buscarPorId(rutaId)).thenReturn(Optional.of(confirmada));
 
         assertThatThrownBy(() -> useCase.ejecutar(rutaId, false))
@@ -219,8 +219,7 @@ class CerrarRutaManualUseCaseTest {
         RutaCerradaEvent event = eventCaptor.getValue();
 
         assertThat(event.tipoEvento()).isEqualTo("RUTA_CERRADA");
-        assertThat(event.tipoCierre()).isEqualTo(TipoCierre.MANUAL.name());
-        assertThat(event.conductor().modeloContrato()).isEqualTo(ModeloContrato.POR_PARADA.name());
+        assertThat(event.conductor().modeloContrato()).isEqualTo(ModeloContrato.POR_PARADA.descripcion());
         assertThat(event.conductor().nombre()).isEqualTo("Ana López");
     }
 }

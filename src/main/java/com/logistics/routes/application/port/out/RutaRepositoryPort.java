@@ -19,9 +19,13 @@ public interface RutaRepositoryPort {
 
     List<Ruta> buscarPorEstado(EstadoRuta estado);
 
+    List<Ruta> buscarRutasActivas();
+
     List<Ruta> buscarRutasVencidas(Instant ahora);
 
     List<Ruta> buscarRutasEnTransitoExcedidas(Instant limite);
 
     Optional<Ruta> buscarRutaActivaPorConductorId(UUID conductorId);
+
+    List<Ruta> buscarHistorialRutas();
 }

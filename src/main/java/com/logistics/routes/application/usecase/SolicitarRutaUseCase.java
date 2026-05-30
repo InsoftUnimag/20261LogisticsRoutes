@@ -1,6 +1,7 @@
 package com.logistics.routes.application.usecase;
 
 import com.logistics.routes.application.command.SolicitarRutaCommand;
+import com.logistics.routes.application.port.out.IntegracionModulo1Port;
 import com.logistics.routes.application.port.out.NotificacionDespachadorPort;
 import com.logistics.routes.application.port.out.ParadaRepositoryPort;
 import com.logistics.routes.application.port.out.RutaRepositoryPort;
@@ -31,6 +32,7 @@ public class SolicitarRutaUseCase {
     private final ParadaRepositoryPort paradaRepository;
     private final NotificacionDespachadorPort notificacion;
     private final RutaCreadorTransaccional rutaCreador;
+    private final IntegracionModulo1Port modulo1Port;
 
     public UUID ejecutar(SolicitarRutaCommand command) {
         validarFechaLimite(command);
@@ -47,6 +49,11 @@ public class SolicitarRutaUseCase {
                 command.latitud(), command.longitud(),
                 command.tipoMercancia(), command.metodoPago(), command.fechaLimiteEntrega());
         paradaRepository.guardar(parada);
+
+        // SPEC-08 §3: notificar a M1 el ruta_id asignado al paquete.
+        // Si el send falla, la transacción @Transactional revierte la ruta y
+        // la parada — M1 reintenta el SOLICITAR_RUTA y el estado queda consistente.
+        modulo1Port.publishRutaAsignada(command.paqueteId(), ruta.getId(), Instant.now());
 
         return ruta.getId();
     }
@@ -90,11 +97,11 @@ public class SolicitarRutaUseCase {
         tipoActual.siguienteTipo().ifPresentOrElse(
                 ruta::setTipoVehiculoRequerido,
                 () -> {
-                    ruta.transicionarAListaParaDespacho();
+                    ruta.transicionarAListaParaDespacho("capacidad_maxima_alcanzada");
                     notificacion.notificarRutaListaParaDespacho(
                             ruta.getId(), ruta.getZona(),
                             ruta.getPesoAcumuladoKg(), ruta.getTipoVehiculoRequerido(),
-                            "capacidad_maxima_alcanzada");
+                            ruta.getMotivoDespacho());
                 });
     }
 }

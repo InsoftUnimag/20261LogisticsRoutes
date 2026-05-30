@@ -55,7 +55,7 @@ class VehiculoTest {
     void marcarInactivo_falla_si_esta_en_transito() {
         Vehiculo v = Vehiculo.nuevo("ABC123", TipoVehiculo.VAN, "Ford Transit",
                 300.0, 10.0, zonaBogota());
-        v.asignarConductor(UUID.randomUUID());
+        v.marcarEnTransito();
 
         assertEquals(EstadoVehiculo.EN_TRANSITO, v.getEstado());
         assertThrows(VehiculoEnTransitoException.class, v::marcarInactivo);
@@ -71,19 +71,19 @@ class VehiculoTest {
     }
 
     @Test
-    void asignarConductor_cambia_estado_a_en_transito() {
+    void asignarConductor_solo_setea_conductorId_sin_cambiar_estado() {
         Vehiculo v = Vehiculo.nuevo("XYZ456", TipoVehiculo.NHR, "Chevrolet NHR",
                 1000.0, 15.0, zonaBogota());
         UUID conductorId = UUID.randomUUID();
 
         v.asignarConductor(conductorId);
 
-        assertEquals(EstadoVehiculo.EN_TRANSITO, v.getEstado());
+        assertEquals(EstadoVehiculo.DISPONIBLE, v.getEstado());
         assertEquals(conductorId, v.getConductorId());
     }
 
     @Test
-    void desvincularConductor_restaura_estado_disponible() {
+    void desvincularConductor_limpia_conductorId_y_mantiene_estado_disponible() {
         Vehiculo v = Vehiculo.nuevo("XYZ456", TipoVehiculo.NHR, "Chevrolet NHR",
                 1000.0, 15.0, zonaBogota());
         v.asignarConductor(UUID.randomUUID());
@@ -92,5 +92,15 @@ class VehiculoTest {
 
         assertEquals(EstadoVehiculo.DISPONIBLE, v.getEstado());
         assertNull(v.getConductorId());
+    }
+
+    @Test
+    void marcarEnTransito_falla_si_no_esta_disponible() {
+        Vehiculo v = Vehiculo.nuevo("XYZ456", TipoVehiculo.NHR, "Chevrolet NHR",
+                1000.0, 15.0, zonaBogota());
+        v.marcarEnTransito();
+
+        assertThrows(com.logistics.routes.domain.exception.VehiculoNoDisponibleException.class,
+                v::marcarEnTransito);
     }
 }

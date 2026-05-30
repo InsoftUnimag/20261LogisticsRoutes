@@ -66,6 +66,9 @@ public class RutaEntity {
     @Column(name = "tipo_cierre", columnDefinition = "tipo_cierre")
     private TipoCierre tipoCierre;
 
+    @Column(name = "motivo_despacho", length = 50)
+    private String motivoDespacho;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

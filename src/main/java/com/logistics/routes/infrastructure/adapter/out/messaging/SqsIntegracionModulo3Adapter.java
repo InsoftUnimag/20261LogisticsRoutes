@@ -1,5 +1,6 @@
 package com.logistics.routes.infrastructure.adapter.out.messaging;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.logistics.routes.application.event.RutaCerradaEvent;
 import com.logistics.routes.application.port.out.IntegracionModulo3Port;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
@@ -14,6 +15,12 @@ import org.springframework.stereotype.Component;
  * Implementación AWS SQS del puerto hacia Módulo 3 (Liquidación).
  * Publica el evento RUTA_CERRADA (SPEC-08 sección 4) en la cola configurada
  * {@code app.sqs.cierre-ruta-queue}. Solo activo bajo el perfil {@code aws}.
+ *
+ * <p>El payload se convierte a {@link JsonNode} con {@link JsonNodeMapper}
+ * (JavaTimeModule + Instant ISO-8601) antes de enviarlo. Esto hace que
+ * Spring Cloud AWS registre {@code JavaType=ObjectNode} en lugar del FQN de
+ * nuestra clase interna, evitando que M3 falle al deserializar por no tener
+ * {@code com.logistics.routes...RutaCerradaEvent} en su classpath.</p>
  */
 @Component
 @Profile("aws")
@@ -29,7 +36,8 @@ public class SqsIntegracionModulo3Adapter implements IntegracionModulo3Port {
 
     @Override
     public void publishRutaCerrada(RutaCerradaEvent event) {
-        sqsTemplate.send(cierreRutaQueue, event);
+        JsonNode payload = JsonNodeMapper.toJsonNode(event);
+        sqsTemplate.send(cierreRutaQueue, payload);
         log.info("[M3-SQS] RUTA_CERRADA enviado a {} ruta_id={}", cierreRutaQueue, event.rutaId());
     }
 }

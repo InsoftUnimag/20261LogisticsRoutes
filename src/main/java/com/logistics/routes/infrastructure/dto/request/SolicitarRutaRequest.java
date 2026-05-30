@@ -1,12 +1,11 @@
 package com.logistics.routes.infrastructure.dto.request;
 
 import com.logistics.routes.application.command.SolicitarRutaCommand;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -30,23 +29,24 @@ public record SolicitarRutaRequest(
         @DecimalMax(value = "180.0", message = "La longitud debe estar entre -180 y 180")
         Double longitud,
 
-        @NotBlank(message = "La dirección es obligatoria")
-        @Size(max = 500, message = "La dirección no puede superar los 500 caracteres")
-        String direccion,
+        @NotNull(message = "La dirección es obligatoria")
+        DireccionDto direccion,
 
-        @Size(max = 20, message = "El tipo de mercancía no puede superar los 20 caracteres")
         String tipoMercancia,
 
-        @Size(max = 20, message = "El método de pago no puede superar los 20 caracteres")
         String metodoPago,
 
         Instant fechaLimiteEntrega
 
 ) {
+    // M1 envía direccion como objeto anidado; solo extraemos el campo texto
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record DireccionDto(String direccion) {}
+
     public SolicitarRutaCommand toCommand() {
         return new SolicitarRutaCommand(
                 paqueteId, pesoKg, latitud, longitud,
-                direccion, tipoMercancia, metodoPago, fechaLimiteEntrega
+                direccion.direccion(), tipoMercancia, metodoPago, fechaLimiteEntrega
         );
     }
 }

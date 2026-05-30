@@ -1,11 +1,13 @@
 package com.logistics.routes.infrastructure.adapter.out.messaging;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.logistics.routes.application.event.NovedadGraveEvent;
 import com.logistics.routes.application.event.PaqueteEnTransitoEvent;
 import com.logistics.routes.application.event.PaqueteEntregadoEvent;
 import com.logistics.routes.application.event.PaqueteExcluidoDespachoEvent;
 import com.logistics.routes.application.event.ParadaFallidaEvent;
 import com.logistics.routes.application.event.ParadasSinGestionarEvent;
+import com.logistics.routes.application.event.RutaAsignadaEvent;
 import com.logistics.routes.application.port.out.IntegracionModulo1Port;
 import com.logistics.routes.domain.enums.TipoCierre;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
@@ -23,8 +25,15 @@ import java.util.UUID;
 /**
  * Implementación AWS SQS del puerto hacia Módulo 1.
  * Publica los eventos del ciclo de vida de paquetes (SPEC-08 sección 3) en la
- * cola configurada {@code app.sqs.eventos-paquete-queue}.
+ * cola configurada {@code app.sqs.eventos-paquete-queue} y la respuesta
+ * RUTA_ASIGNADA en {@code app.sqs.respuestas-ruta-queue}.
  * Solo activo bajo el perfil {@code aws}.
+ *
+ * <p>Los payloads se convierten a {@link JsonNode} con {@link JsonNodeMapper}
+ * (JavaTimeModule + Instant ISO-8601) antes de enviarlos. Esto hace que
+ * Spring Cloud AWS registre {@code JavaType=ObjectNode} en lugar del FQN de
+ * nuestras clases internas, evitando que M1 falle al deserializar por no tener
+ * {@code com.logistics.routes...Event} en su classpath.</p>
  */
 @Component
 @Profile("aws")
@@ -37,6 +46,18 @@ public class SqsIntegracionModulo1Adapter implements IntegracionModulo1Port {
 
     @Value("${app.sqs.eventos-paquete-queue}")
     private String eventosPaqueteQueue;
+
+    @Value("${app.sqs.respuestas-ruta-queue}")
+    private String respuestasRutaQueue;
+
+    @Override
+    public void publishRutaAsignada(UUID paqueteId, UUID rutaId, Instant fechaHora) {
+        JsonNode payload = JsonNodeMapper.toJsonNode(
+                RutaAsignadaEvent.of(paqueteId, rutaId, fechaHora));
+        sqsTemplate.send(respuestasRutaQueue, payload);
+        log.info("[M1-SQS] RUTA_ASIGNADA enviado a {}: paqueteId={} rutaId={}",
+                respuestasRutaQueue, paqueteId, rutaId);
+    }
 
     @Override
     public void publishPaqueteExcluidoDespacho(UUID paqueteId, UUID rutaId, String motivo, Instant fechaHora) {
@@ -72,7 +93,8 @@ public class SqsIntegracionModulo1Adapter implements IntegracionModulo1Port {
     }
 
     private void publicar(Object evento, String tipo) {
-        sqsTemplate.send(eventosPaqueteQueue, evento);
+        JsonNode payload = JsonNodeMapper.toJsonNode(evento);
+        sqsTemplate.send(eventosPaqueteQueue, payload);
         log.info("[M1-SQS] {} enviado a {}", tipo, eventosPaqueteQueue);
     }
 }

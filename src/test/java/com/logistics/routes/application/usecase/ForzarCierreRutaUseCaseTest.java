@@ -62,7 +62,7 @@ class ForzarCierreRutaUseCaseTest {
         Ruta ruta = Ruta.reconstituir(rutaId, "d3gpz", EstadoRuta.EN_TRANSITO, 200.0,
                 TipoVehiculo.VAN, vehiculoId, conductorId,
                 Instant.now().minusSeconds(7200), Instant.now().plusSeconds(3600),
-                Instant.now().minusSeconds(3600), null, null);
+                Instant.now().minusSeconds(3600), null, null, null);
 
         UUID paqueteId = UUID.randomUUID();
         Parada pendiente = Parada.reconstituir(UUID.randomUUID(), rutaId, paqueteId, 1,

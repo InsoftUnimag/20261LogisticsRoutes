@@ -38,6 +38,17 @@ public class ConductorController {
     private final DarDeBajaConductorUseCase darDeBajaConductor;
     private final ConsultarHistorialConductorUseCase consultarHistorial;
 
+    @Operation(summary = "Listar todos los conductores",
+            description = "Retorna todos los conductores con su estado actual. Requiere rol FLEET_ADMIN o DISPATCHER.")
+    @ApiResponse(responseCode = "200", description = "Listado obtenido exitosamente")
+    @GetMapping
+    @PreAuthorize("hasAnyRole('FLEET_ADMIN', 'DISPATCHER')")
+    public List<ConductorResponse> listar() {
+        return listarConductores.ejecutar().stream()
+                .map(ConductorResponse::from)
+                .toList();
+    }
+
     @Operation(summary = "Registrar un nuevo conductor")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Conductor registrado exitosamente"),

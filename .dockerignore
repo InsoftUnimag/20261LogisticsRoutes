@@ -1,0 +1,29 @@
+# Excluye directorios que no necesita Docker al construir la imagen
+.gradle/
+build/
+out/
+bin/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Variables de entorno (nunca entran a la imagen)
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Documentación / certificados
+docs/
+*.pem
+memory/
+.claude/

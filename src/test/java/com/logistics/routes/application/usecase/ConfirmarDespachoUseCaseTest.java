@@ -10,6 +10,7 @@ import com.logistics.routes.domain.enums.EstadoRuta;
 import com.logistics.routes.domain.enums.EstadoVehiculo;
 import com.logistics.routes.domain.enums.ModeloContrato;
 import com.logistics.routes.domain.enums.TipoVehiculo;
+import com.logistics.routes.domain.exception.ConductorNoAsignadoAlVehiculoException;
 import com.logistics.routes.domain.exception.ConductorNoDisponibleException;
 import com.logistics.routes.domain.exception.ConductorNoEncontradoException;
 import com.logistics.routes.domain.exception.RutaNoEncontradaException;
@@ -174,6 +175,48 @@ class ConfirmarDespachoUseCaseTest {
     }
 
     @Test
+    void lanza_excepcion_cuando_el_conductor_no_esta_emparejado_con_el_vehiculo() {
+        // La ruta requiere MOTO. Conductor y vehículo válidos por separado,
+        // pero el conductor NO es el emparejado por el FLEET_ADMIN.
+        Ruta ruta = rutaListaParaDespacho();
+        Conductor conductor = Conductor.nuevo("Juan Pérez", "juan@logistica.com", ModeloContrato.POR_PARADA);
+        Vehiculo vehiculo = vehiculoDisponibleMoto("ABC123");
+
+        // FLEET_ADMIN emparejó el vehículo con OTRO conductor distinto
+        UUID conductorEmparejado = UUID.randomUUID();
+        vehiculo.asignarConductor(conductorEmparejado);
+
+        when(rutaRepository.buscarPorId(ruta.getId())).thenReturn(Optional.of(ruta));
+        when(conductorRepository.buscarPorId(conductor.getId())).thenReturn(Optional.of(conductor));
+        when(vehiculoRepository.buscarPorId(vehiculo.getId())).thenReturn(Optional.of(vehiculo));
+
+        assertThatThrownBy(() -> useCase.ejecutar(ruta.getId(),
+                new ConfirmarDespachoCommand(conductor.getId(), vehiculo.getId())))
+                .isInstanceOf(ConductorNoAsignadoAlVehiculoException.class);
+
+        verify(rutaRepository, never()).guardar(any());
+        verify(vehiculoRepository, never()).guardar(any());
+        verify(conductorRepository, never()).guardar(any());
+    }
+
+    @Test
+    void lanza_excepcion_cuando_el_vehiculo_no_tiene_conductor_emparejado() {
+        Ruta ruta = rutaListaParaDespacho();
+        Conductor conductor = Conductor.nuevo("Juan Pérez", "juan@logistica.com", ModeloContrato.POR_PARADA);
+        Vehiculo vehiculo = vehiculoDisponibleMoto("ABC123");
+        // Vehículo sin conductor emparejado (vehiculo.getConductorId() == null)
+
+        when(rutaRepository.buscarPorId(ruta.getId())).thenReturn(Optional.of(ruta));
+        when(conductorRepository.buscarPorId(conductor.getId())).thenReturn(Optional.of(conductor));
+        when(vehiculoRepository.buscarPorId(vehiculo.getId())).thenReturn(Optional.of(vehiculo));
+
+        assertThatThrownBy(() -> useCase.ejecutar(ruta.getId(),
+                new ConfirmarDespachoCommand(conductor.getId(), vehiculo.getId())))
+                .isInstanceOf(ConductorNoAsignadoAlVehiculoException.class)
+                .hasMessageContaining("ninguno");
+    }
+
+    @Test
     void lanza_excepcion_cuando_el_tipo_de_vehiculo_no_coincide_con_la_ruta() {
         // La ruta requiere MOTO (default), pero el vehículo es VAN
         Ruta ruta = rutaListaParaDespacho();
@@ -214,6 +257,10 @@ class ConfirmarDespachoUseCaseTest {
     }
 
     private void mockFlujoFeliz(Ruta ruta, Conductor conductor, Vehiculo vehiculo, List<Parada> paradas) {
+        // Emparejamiento previo del FLEET_ADMIN — requisito de ConfirmarDespacho
+        conductor.asignarVehiculo(vehiculo.getId());
+        vehiculo.asignarConductor(conductor.getId());
+
         when(rutaRepository.buscarPorId(ruta.getId())).thenReturn(Optional.of(ruta));
         when(conductorRepository.buscarPorId(conductor.getId())).thenReturn(Optional.of(conductor));
         when(vehiculoRepository.buscarPorId(vehiculo.getId())).thenReturn(Optional.of(vehiculo));

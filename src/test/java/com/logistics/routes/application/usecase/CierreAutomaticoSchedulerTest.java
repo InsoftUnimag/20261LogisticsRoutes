@@ -68,7 +68,7 @@ class CierreAutomaticoSchedulerTest {
         Ruta rutaExcedida = Ruta.reconstituir(rutaId, "d3gpz", EstadoRuta.EN_TRANSITO, 150.0,
                 TipoVehiculo.NHR, vehiculoId, conductorId,
                 Instant.now().minusSeconds(86400 * 4), Instant.now().minusSeconds(86400),
-                inicioHaceTreesDias, null, null);
+                inicioHaceTreesDias, null, null, null);
 
         Conductor conductor = Conductor.reconstituir(conductorId, "Luis Torres", "luis@test.com",
                 ModeloContrato.RECORRIDO_COMPLETO, EstadoConductor.EN_RUTA, vehiculoId);

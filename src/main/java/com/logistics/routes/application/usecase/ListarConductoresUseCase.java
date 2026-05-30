@@ -4,12 +4,10 @@ import com.logistics.routes.application.port.out.ConductorRepositoryPort;
 import com.logistics.routes.domain.model.Conductor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ListarConductoresUseCase {
 

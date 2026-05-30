@@ -119,7 +119,7 @@ class OperacionConductorIntegrationTest {
                 TipoVehiculo.VAN, vehiculoId, conductorId,
                 Instant.now().minus(2, ChronoUnit.DAYS),
                 Instant.now().plus(1, ChronoUnit.DAYS),
-                null, null, null);
+                null, null, null, null);
         return rutaRepo.guardar(r);
     }
 
@@ -128,7 +128,7 @@ class OperacionConductorIntegrationTest {
                 TipoVehiculo.VAN, vehiculoId, conductorId,
                 Instant.now().minus(2, ChronoUnit.DAYS),
                 Instant.now().plus(1, ChronoUnit.DAYS),
-                Instant.now().minus(1, ChronoUnit.HOURS), null, null);
+                Instant.now().minus(1, ChronoUnit.HOURS), null, null, null);
         return rutaRepo.guardar(r);
     }
 
@@ -191,7 +191,7 @@ class OperacionConductorIntegrationTest {
                 TipoVehiculo.MOTO, vehiculoId, otroConductorId,
                 Instant.now().minus(1, ChronoUnit.DAYS),
                 Instant.now().plus(1, ChronoUnit.DAYS),
-                null, null, null);
+                null, null, null, null);
         rutaRepo.guardar(ruta);
 
         mockMvc.perform(post("/api/conductor/rutas/{id}/iniciar-transito", ruta.getId()))

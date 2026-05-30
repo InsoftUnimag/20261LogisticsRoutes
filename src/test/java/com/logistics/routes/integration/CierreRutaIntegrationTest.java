@@ -88,7 +88,7 @@ class CierreRutaIntegrationTest {
                 Instant.now().minus(5, ChronoUnit.DAYS),
                 Instant.now().minus(2, ChronoUnit.DAYS),
                 Instant.now().minus(3, ChronoUnit.DAYS),
-                null, null);
+                null, null, null);
         return rutaRepo.guardar(r);
     }
 

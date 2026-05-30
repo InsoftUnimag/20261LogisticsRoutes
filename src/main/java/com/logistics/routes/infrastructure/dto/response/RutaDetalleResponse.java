@@ -20,6 +20,7 @@ public record RutaDetalleResponse(
         Instant fechaCreacionRuta,
         Instant fechaLimiteDespacho,
         int cantidadParadas,
+        String motivoDespacho,
         List<ParadaResponse> paradas
 ) {
     public static RutaDetalleResponse from(Ruta ruta, List<Parada> paradas) {
@@ -37,6 +38,7 @@ public record RutaDetalleResponse(
                 ruta.getFechaCreacionRuta(),
                 ruta.getFechaLimiteDespacho(),
                 items.size(),
+                ruta.getMotivoDespacho(),
                 items
         );
     }

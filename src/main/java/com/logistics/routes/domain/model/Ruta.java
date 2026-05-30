@@ -23,11 +23,13 @@ public class Ruta {
     private Instant fechaHoraInicio;
     private Instant fechaHoraCierre;
     private TipoCierre tipoCierre;
+    private String motivoDespacho;
 
     private Ruta(UUID id, String zona, EstadoRuta estado, double pesoAcumuladoKg,
                  TipoVehiculo tipoVehiculoRequerido, UUID vehiculoId, UUID conductorId,
                  Instant fechaCreacionRuta, Instant fechaLimiteDespacho,
-                 Instant fechaHoraInicio, Instant fechaHoraCierre, TipoCierre tipoCierre) {
+                 Instant fechaHoraInicio, Instant fechaHoraCierre, TipoCierre tipoCierre,
+                 String motivoDespacho) {
         this.id = id;
         this.zona = zona;
         this.estado = estado;
@@ -40,6 +42,7 @@ public class Ruta {
         this.fechaHoraInicio = fechaHoraInicio;
         this.fechaHoraCierre = fechaHoraCierre;
         this.tipoCierre = tipoCierre;
+        this.motivoDespacho = motivoDespacho;
     }
 
     public static Ruta nueva(String zona, Instant fechaLimiteDespacho) {
@@ -53,17 +56,18 @@ public class Ruta {
                 UUID.randomUUID(), zona, EstadoRuta.CREADA, 0.0,
                 TipoVehiculo.MOTO, null, null,
                 Instant.now(), fechaLimiteDespacho,
-                null, null, null
+                null, null, null, null
         );
     }
 
     public static Ruta reconstituir(UUID id, String zona, EstadoRuta estado, double pesoAcumuladoKg,
                                     TipoVehiculo tipoVehiculoRequerido, UUID vehiculoId, UUID conductorId,
                                     Instant fechaCreacionRuta, Instant fechaLimiteDespacho,
-                                    Instant fechaHoraInicio, Instant fechaHoraCierre, TipoCierre tipoCierre) {
+                                    Instant fechaHoraInicio, Instant fechaHoraCierre, TipoCierre tipoCierre,
+                                    String motivoDespacho) {
         return new Ruta(id, zona, estado, pesoAcumuladoKg, tipoVehiculoRequerido,
                 vehiculoId, conductorId, fechaCreacionRuta, fechaLimiteDespacho,
-                fechaHoraInicio, fechaHoraCierre, tipoCierre);
+                fechaHoraInicio, fechaHoraCierre, tipoCierre, motivoDespacho);
     }
 
     public void agregarPeso(double kg) {
@@ -92,12 +96,18 @@ public class Ruta {
         this.tipoVehiculoRequerido = nuevo;
     }
 
+    /** Conservado para compatibilidad con tests de dominio que no necesitan motivo. */
     public void transicionarAListaParaDespacho() {
+        transicionarAListaParaDespacho(null);
+    }
+
+    public void transicionarAListaParaDespacho(String motivoDespacho) {
         if (estado != EstadoRuta.CREADA) {
             throw new IllegalStateException(
                     "Solo se puede transicionar a LISTA_PARA_DESPACHO desde CREADA, estado actual: " + estado);
         }
         this.estado = EstadoRuta.LISTA_PARA_DESPACHO;
+        this.motivoDespacho = motivoDespacho;
     }
 
     public void iniciarTransito() {

@@ -1,16 +1,23 @@
 # =============================================================================
-# Entorno de desarrollo local — Sistema de Gestión de Rutas Logísticas
+# Entorno completo — Sistema de Gestión de Rutas Logísticas
 #
-# Servicios incluidos:
-#   - postgres : PostgreSQL 17 (BD principal)
-#   - redis    : Redis 7       (ShedLock + caché)
+# Servicios:
+#   - postgres : PostgreSQL 17  (BD principal)
+#   - redis    : Redis 7        (ShedLock + caché)
+#   - app      : Spring Boot    (API REST + consumers SQS)
 #
-# Arrancar:  docker compose up -d
-# Detener:   docker compose down
-# Logs:      docker compose logs -f
+# Arrancar:   docker compose up -d
+#             docker compose up -d --build   ← si hay cambios en el código
+# Detener:    docker compose down
+# Logs app:   docker compose logs -f app
+# Rebuild:    docker compose build app
+#
+# Variables de entorno: definidas en el archivo .env (ver .env.example)
 # =============================================================================
 
 services:
+
+  # ── Infraestructura ────────────────────────────────────────────────────────
 
   postgres:
     image: postgres:17-alpine
@@ -44,6 +51,67 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  # ── Aplicación Spring Boot ─────────────────────────────────────────────────
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: logistics-routes:latest
+    container_name: logistics-routes-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # ── Perfiles activos ────────────────────────────────────────────────
+      # "aws"  → activa SqsIntegracion*Adapter y AwsS3Config (credenciales via IAM Role)
+      # "prod" → activa application-prod.yml (BD/Redis reales, logging producción)
+      SPRING_PROFILES_ACTIVE: aws,prod
+
+      # ── Base de datos ────────────────────────────────────────────────────
+      # "postgres" es el hostname del servicio de arriba dentro de la red Docker
+      DB_URL:      jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # ── Redis ────────────────────────────────────────────────────────────
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # ── JWT ──────────────────────────────────────────────────────────────
+      JWT_SECRET:        ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+
+      # ── AWS ──────────────────────────────────────────────────────────────
+      # Las credenciales las provee el IAM Role del EC2 automáticamente.
+      # Solo necesitamos indicar la región.
+      # NOTA: Si el EC2 usa IMDSv2, asegúrate de que el hop-limit sea >= 2:
+      #   aws ec2 modify-instance-metadata-options --instance-id <id> \
+      #     --http-put-response-hop-limit 2 --http-endpoint enabled
+      AWS_REGION: ${AWS_REGION:-us-east-2}
+
+      # ── SQS — nombres exactos de las colas en AWS ────────────────────────
+      SQS_SOLICITUDES_RUTA_QUEUE: ${SQS_SOLICITUDES_RUTA_QUEUE}
+      SQS_EVENTOS_PAQUETE_QUEUE:  ${SQS_EVENTOS_PAQUETE_QUEUE}
+      SQS_CIERRE_RUTA_QUEUE:      ${SQS_CIERRE_RUTA_QUEUE}
+      SQS_RESPUESTAS_RUTA_QUEUE:  ${SQS_RESPUESTAS_RUTA_QUEUE}
+
+      # ── S3 ───────────────────────────────────────────────────────────────
+      S3_BUCKET_POD: ${S3_BUCKET_POD}
+
+    healthcheck:
+      # Spring Boot puede tardar ~30-60 s en arrancar; start_period da margen
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
 
 volumes:
   postgres_data:

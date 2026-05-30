@@ -23,6 +23,7 @@ public class RutaMapper {
                 .fechaHoraInicio(r.getFechaHoraInicio())
                 .fechaHoraCierre(r.getFechaHoraCierre())
                 .tipoCierre(r.getTipoCierre())
+                .motivoDespacho(r.getMotivoDespacho())
                 .build();
     }
 
@@ -39,7 +40,8 @@ public class RutaMapper {
                 e.getFechaLimiteDespacho(),
                 e.getFechaHoraInicio(),
                 e.getFechaHoraCierre(),
-                e.getTipoCierre()
+                e.getTipoCierre(),
+                e.getMotivoDespacho()
         );
     }
 }

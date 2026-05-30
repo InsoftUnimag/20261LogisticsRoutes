@@ -15,6 +15,13 @@ import java.util.UUID;
 public interface IntegracionModulo1Port {
 
     /**
+     * Evento #2 SPEC-08: M2 asignó exitosamente el paquete (recibido vía
+     * SOLICITAR_RUTA) a una ruta. Publicado en la cola dedicada
+     * {@code respuestas-ruta-queue}.
+     */
+    void publishRutaAsignada(UUID paqueteId, UUID rutaId, Instant fechaHora);
+
+    /**
      * Evento #9 SPEC-08: el Despachador excluyó el paquete de una ruta en
      * LISTA_PARA_DESPACHO antes de confirmar el despacho.
      */

@@ -7,6 +7,7 @@ import com.logistics.routes.application.port.out.RutaRepositoryPort;
 import com.logistics.routes.application.port.out.VehiculoRepositoryPort;
 import com.logistics.routes.domain.enums.EstadoConductor;
 import com.logistics.routes.domain.enums.EstadoVehiculo;
+import com.logistics.routes.domain.exception.ConductorNoAsignadoAlVehiculoException;
 import com.logistics.routes.domain.exception.ConductorNoDisponibleException;
 import com.logistics.routes.domain.exception.ConductorNoEncontradoException;
 import com.logistics.routes.domain.exception.RutaNoEncontradaException;
@@ -56,6 +57,15 @@ public class ConfirmarDespachoUseCase {
             throw new VehiculoNoDisponibleException(
                     "El vehículo " + vehiculo.getId() + " es tipo " + vehiculo.getTipo()
                             + " pero la ruta requiere " + ruta.getTipoVehiculoRequerido());
+        }
+        // El conductor debe ser el emparejado por el FLEET_ADMIN con este vehículo.
+        // El dispatcher no puede sobrescribir la pareja al confirmar despacho.
+        if (!command.conductorId().equals(vehiculo.getConductorId())) {
+            throw new ConductorNoAsignadoAlVehiculoException(
+                    command.conductorId(),
+                    vehiculo.getId(),
+                    vehiculo.getConductorId()
+            );
         }
 
         List<Parada> paradas = paradaRepository.buscarPorRutaId(rutaId);

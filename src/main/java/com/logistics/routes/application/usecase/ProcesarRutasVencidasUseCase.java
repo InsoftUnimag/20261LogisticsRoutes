@@ -21,12 +21,12 @@ public class ProcesarRutasVencidasUseCase {
     public void ejecutar() {
         List<Ruta> vencidas = rutaRepository.buscarRutasVencidas(Instant.now());
         vencidas.forEach(ruta -> {
-            ruta.transicionarAListaParaDespacho();
+            ruta.transicionarAListaParaDespacho("vencimiento_plazo");
             rutaRepository.guardar(ruta);
             notificacion.notificarRutaListaParaDespacho(
                     ruta.getId(), ruta.getZona(),
                     ruta.getPesoAcumuladoKg(), ruta.getTipoVehiculoRequerido(),
-                    "vencimiento_plazo");
+                    ruta.getMotivoDespacho());
         });
     }
 }
